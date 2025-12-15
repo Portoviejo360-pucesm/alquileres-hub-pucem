@@ -1,19 +1,16 @@
 import express from "express";
 import cors from "cors";
 
-import { propiedadesRouter } from "./modules/propiedades/propiedades.routes";
-import filtrosRouter from "./modules/filtros/filtros.routes";
+import { propiedadesRouter } from "./routers/propiedades.routes";
+import { filtrosRouter } from "./routers/filtros.routes"; // 👈 FALTA ESTO
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// rutas
+// Rutas
 app.use("/propiedades", propiedadesRouter);
-app.use("/filtros", filtrosRouter);
-
-// test
-app.get("/test", (req, res) => res.json({ ok: true }));
+app.use("/filtros", filtrosRouter); // 👈 Y ESTO
 
 export default app;

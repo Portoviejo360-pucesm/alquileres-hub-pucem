@@ -4,7 +4,7 @@
   "scripts": {
     "build": "tsc",
     "clean-install": "rm -rf ./node_modules && rm -r package-lock.json && npm i",
-    "dev":  "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "dev:hot": "nodemon --exec \"npm run dev\" --watch ./src --ext .ts",
     "lint": "eslint .",
     "start": "node dist/server.js",
@@ -15,6 +15,7 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.87.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dayjs": "^1.11.19",
