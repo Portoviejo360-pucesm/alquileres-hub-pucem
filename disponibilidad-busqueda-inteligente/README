@@ -1,0 +1,46 @@
+
+
+Creacion del beckend de express
+npx express-generator-typescript BeckendPanelDeDsiponibilidad
+git push -u origin PanelDeDisponibilidad
+
+
+arquitectura backend-panel-disponibilidad/
+│
+├── src/
+│   ├── app.ts
+│   ├── server.ts
+│   │
+│   ├── config/
+│   │     └── database.ts
+│   │
+│   ├── modules/
+│   │     ├── propiedades/
+│   │     │       ├── propiedades.routes.ts
+│   │     │       ├── propiedades.controller.ts
+│   │     │       ├── propiedades.service.ts
+│   │     │       └── propiedades.model.ts
+│   │     │
+│   │     ├── filtros/
+│   │     │       ├── filtros.routes.ts
+│   │     │       ├── filtros.controller.ts
+│   │     │       └── filtros.service.ts
+│   │     │
+│   │     └── tiempo-real/
+│   │             └── panel.gateway.ts
+│   │
+│   ├── middleware/
+│   │     ├── errorHandler.ts
+│   │     └── validarFiltros.ts
+│   │
+│   ├── types/
+│   │     └── index.d.ts
+│   │
+│   └── utils/
+│         └── response.ts
+│
+├── .env
+├── .env.template
+├── package.json
+├── tsconfig.json
+└── README.md
