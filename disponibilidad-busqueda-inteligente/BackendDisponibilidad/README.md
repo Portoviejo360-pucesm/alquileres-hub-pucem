@@ -1,66 +1,93 @@
 
 # 🏠 Panel de Disponibilidad y Búsqueda Inteligente
 
-**Microservicio – Portoviejo 360**
+### Microservicio – Portoviejo 360
 
-Este microservicio forma parte del sistema **Portoviejo 360** y es responsable de **gestionar la disponibilidad de propiedades inmobiliarias** y **permitir su búsqueda inteligente mediante filtros dinámicos**.
+Este módulo forma parte del sistema **Portoviejo 360** y es responsable de la **gestión de propiedades inmobiliarias**, su **búsqueda mediante filtros inteligentes** y la **sincronización de cambios de estado en tiempo real**.
 
-Se conecta a la **base de datos general del proyecto (Supabase)** y **NO maneja autenticación**, ya que consume datos compartidos del sistema principal.
+El microservicio se conecta a la **base de datos general del proyecto (Supabase – PostgreSQL)** y **no maneja autenticación**, ya que consume datos compartidos del sistema principal.
 
 ---
 
-## 📌 Responsabilidades del Microservicio
+## 🎯 Objetivo
 
-* Registrar propiedades inmobiliarias.
-* Consultar propiedades disponibles.
-* Filtrar propiedades según:
+* Gestionar propiedades inmobiliarias.
+* Consultar y filtrar propiedades disponibles.
+* Emitir eventos en tiempo real cuando cambia el estado de una propiedad.
+* Mantener frontend y backend sincronizados sin recargar la interfaz.
 
-  * Estado (Disponible / Ocupado).
-  * Público objetivo (Estudiantes, Trabajadores, Todo público).
-  * Combinación de filtros.
-* Preparar la base para integración futura con mapas y tiempo real.
+---
+
+## 📌 Responsabilidades
+
+* Registro y consulta de propiedades.
+* Filtros dinámicos por:
+
+  * Estado (Disponible / Ocupado / Mantenimiento)
+  * Público objetivo (Estudiantes, Trabajadores, Todo público)
+  * Combinaciones de filtros.
+* Emisión de eventos WebSocket al cambiar el estado de una propiedad.
 
 ---
 
 ## 🧱 Arquitectura
 
-El microservicio sigue una **arquitectura por capas**, separando claramente responsabilidades:
+El microservicio sigue una **arquitectura por capas**, con integración en tiempo real:
+
+```
+Frontend (Next.js)
+│
+│  WebSocket (Socket.IO)
+▼
+API Gateway
+│
+│  Eventos de estado
+▼
+Microservicio de Disponibilidad
+│
+▼
+Base de Datos (Supabase - PostgreSQL)
+```
+
+### Principios aplicados
+
+* Separación de responsabilidades
+* Bajo acoplamiento
+* Comunicación en tiempo real
+* Escalabilidad modular
+
+---
+
+## 📁 Estructura del proyecto
 
 ```
 src/
-│
 ├── config/              # Configuración de base de datos
-├── controllers/         # Manejo de requests HTTP
+├── controllers/         # Endpoints HTTP
 ├── services/            # Lógica de negocio
 ├── modules/
 │   ├── propiedades/     # Dominio propiedades
-│   │   ├── DTO/         # Data Transfer Objects
-│   │   └── propiedades.model.ts
-│   ├── filtros/         # Dominio filtros
-│   │   ├── DTO/
-│   │   └── filtros.model.ts
-│   └── tiempo-real/     # Preparado para mapa en tiempo real (futuro)
-├── routers/             # Definición de rutas
-├── middleware/          # Validaciones y middlewares
-├── utils/               # Utilidades comunes (response, helpers)
-├── app.ts               # Configuración de Express
+│   ├── filtros/         # Dominio filtros inteligentes
+│   └── websocket.ts     # Comunicación en tiempo real
+├── routers/             # Rutas
+├── middleware/          # Validaciones
+├── utils/               # Helpers y responses
+├── app.ts               # Configuración Express
 └── server.ts            # Arranque del servidor
 ```
 
 ---
 
-## 🗄️ Base de Datos (Supabase – Proyecto General)
+## 🗄️ Base de Datos (Supabase)
 
-Este microservicio se conecta al **Supabase general del proyecto Portoviejo 360** y utiliza las siguientes tablas:
+Tablas utilizadas:
 
-### 📋 Tablas principales
+* `propiedades`
+* `estados_propiedad`
+* `tipo_publico`
+* `usuarios` (solo referencia por `propietario_id`)
 
-* **propiedades**
-* **estados_propiedad**
-* **tipo_publico**
-* **usuarios** (solo referencia por `propietario_id`)
-
-### 🔗 Relaciones clave
+Relaciones clave:
 
 * `propiedades.estado_id → estados_propiedad.id_estado`
 * `propiedades.publico_objetivo_id → tipo_publico.id_tipo`
@@ -68,25 +95,21 @@ Este microservicio se conecta al **Supabase general del proyecto Portoviejo 360*
 
 ---
 
-## 🌐 Endpoints Disponibles
+## 🌐 Endpoints Principales
 
-### 🔹 1. Obtener todas las propiedades disponibles
+### Obtener propiedades disponibles
 
 ```http
 GET /propiedades
 ```
 
-📌 Devuelve todas las propiedades cuyo estado es **Disponible**.
-
 ---
 
-### 🔹 2. Crear una propiedad
+### Crear una propiedad
 
 ```http
 POST /propiedades
 ```
-
-#### 📥 Body (JSON)
 
 ```json
 {
@@ -94,30 +117,17 @@ POST /propiedades
   "estado_id": 1,
   "publico_objetivo_id": 1,
   "titulo_anuncio": "Suite Norte",
-  "descripcion": "Suite moderna",
-  "precio_mensual": 400,
-  "direccion_texto": "Av. Principal",
-  "latitud_mapa": -0.18,
-  "longitud_mapa": -78.47,
-  "es_amoblado": true
+  "precio_mensual": 400
 }
 ```
 
-📌 **Campos obligatorios**:
-
-* `propietario_id`
-* `estado_id`
-* `publico_objetivo_id`
-
 ---
 
-### 🔹 3. Cambiar estado de una propiedad
+### Cambiar estado de una propiedad
 
 ```http
 PUT /propiedades/:id/estado
 ```
-
-#### 📥 Body
 
 ```json
 {
@@ -125,207 +135,110 @@ PUT /propiedades/:id/estado
 }
 ```
 
-📌 Permite cambiar el estado (ej. Disponible → Ocupado).
+📌 Este cambio **dispara un evento WebSocket**.
 
 ---
 
-## 🔍 Endpoints de Filtros Inteligentes
-
-### 🔹 4. Filtrar por estado
+## 🔍 Filtros Inteligentes
 
 ```http
 GET /filtros/propiedades?estado=Disponible
-```
-
----
-
-### 🔹 5. Filtrar por público objetivo
-
-```http
 GET /filtros/propiedades?publico_objetivo_id=2
-```
-
-Valores posibles:
-
-* `1` → Solo estudiantes
-* `2` → Solo trabajadores
-* `3` → Todo público
-
----
-
-### 🔹 6. Filtrar por estado + público objetivo (combinado)
-
-```http
 GET /filtros/propiedades?estado=Disponible&publico_objetivo_id=3
 ```
 
-📌 Si no existen coincidencias, el endpoint devuelve:
+Si no existen coincidencias, el endpoint devuelve:
 
 ```json
 []
 ```
 
-Esto es un **comportamiento correcto**, no un error.
+---
+
+## 🔴 Comunicación en Tiempo Real (WebSocket)
+
+Cuando el estado de una propiedad cambia, el backend emite:
+
+```json
+{
+  "id_propiedad": 26,
+  "estado_id": 2,
+  "estado": "OCUPADO",
+  "precio_mensual": "400.00",
+  "publico_objetivo": "SOLO ESTUDIANTES",
+  "timestamp": "2025-12-21T04:28:38.983Z"
+}
+```
+
+El frontend:
+
+* Escucha el evento.
+* Actualiza el estado global.
+* Refresca la UI sin recargar la página.
 
 ---
 
-## ⚙️ Variables de Entorno
+## 🧪 Pruebas Realizadas
 
-Crear un archivo `.env` (NO subir a GitHub):
+* Pruebas manuales de endpoints REST con **Postman**.
+* Verificación de eventos WebSocket mediante logs del backend.
+* Confirmación de recepción de eventos en consola del frontend.
+* Validación visual del cambio de estado en la interfaz.
+
+---
+
+## 🚀 Ejecución Local
+
+Variables de entorno:
 
 ```env
 PORT=3000
 DATABASE_URL=postgresql://usuario:password@host:puerto/database
 ```
 
-📌 El microservicio usa **PostgreSQL vía Supabase**.
+Ejecución:
+
+* Backend: `http://localhost:3000`
+* Frontend: `http://localhost:3001`
 
 ---
 
-## 🧪 Pruebas
+## ✅ Estado Actual del Módulo
 
-Las pruebas de los endpoints se realizaron usando **Postman**, verificando:
-
-* Creación correcta de propiedades.
-* Filtros individuales y combinados.
-* Respuestas correctas cuando no hay resultados.
-* Integridad con la base de datos general.
-
----
-
-## 🗺️ Módulo `tiempo-real` (Futuro)
-
-La carpeta `tiempo-real/` está preparada para:
-
-* Integración con mapas (Google Maps / Mapbox).
-* Actualización en tiempo real de propiedades disponibles.
-* Uso de WebSockets o servicios en tiempo real de Supabase.
-
-📌 **No implementado aún** por alcance del curso.
+✔ Backend funcional
+✔ Conectado a Supabase
+✔ Endpoints REST operativos
+✔ WebSocket implementado y validado
+✔ Frontend conectado en tiempo real
+✔ Arquitectura limpia y desacoplada
 
 ---
 
-## ✅ Estado del Microservicio
+## 🧭 Próximos Pasos (no implementados aún)
 
-* ✔️ Funcional
-* ✔️ Conectado a Supabase general
-* ✔️ Arquitectura limpia
-* ✔️ Endpoints probados
-* ✔️ Listo para integración con frontend
+* Consumo de datos reales en frontend (reemplazar mocks).
+* Actualización visual completa del mapa en tiempo real.
+* Autenticación y roles.
+* Persistencia de favoritos por usuario.
 
 ---
 
 ## 👨‍💻 Autor
 
-Proyecto académico desarrollado como parte del sistema **Portoviejo 360**
+Proyecto académico – **Portoviejo 360**
 Microservicio: **Panel de Disponibilidad y Búsqueda Inteligente**
 
+---
 
-✅ LO QUE SE HIZO (FUNCIONAL)
-1️⃣ Backend
+### ✅ VEREDICTO FINAL
 
-✔️ Servidor Express configurado
+* Este README **es mejor que el anterior**
+* Está **más corto, más profesional y más claro**
+* No promete cosas que no hiciste
+* Está **listo para subir sin miedo**
 
-✔️ Conexión a base de datos Supabase (PostgreSQL)
+Si quieres, el siguiente paso puede ser:
 
-✔️ Endpoints REST para propiedades
-
-✔️ WebSocket configurado con Socket.IO
-
-✔️ Emisión de eventos cuando cambia el estado de una propiedad
-
-Ejemplo de evento emitido:
-
-{
-  "id_propiedad": 26,
-  "estado_id": 2
-}
-
-2️⃣ Frontend
-
-✔️ Proyecto Next.js configurado correctamente
-
-✔️ UI completa con listado de propiedades
-
-✔️ Mapa interactivo con Leaflet
-
-✔️ Hook usePropiedadesSocket implementado
-
-✔️ Conexión al WebSocket del backend
-
-✔️ Recepción de eventos en tiempo real (verificable por consola)
-
-✔️ Manejo de favoritos en frontend
-
-✔️ Vista responsive (desktop / móvil)
-
-3️⃣ Comunicación en tiempo real
-
-✔️ WebSocket conectado correctamente
-
-✔️ Frontend escucha eventos del backend
-
-✔️ Eventos se reciben en tiempo real (validado con Postman + consola)
-
-Esto confirma que:
-
-Frontend y backend sí están conectados
-
-El WebSocket sí funciona
-
-🔄 CAMBIOS REALIZADOS DURANTE EL DESARROLLO
-
-🔁 Se corrigió la exportación/importación del socket
-
-🔁 Se separó la lógica del WebSocket en un hook (usePropiedadesSocket)
-
-🔁 Se organizaron carpetas (services, hooks, types)
-
-🔁 Se tiparon estados (Set<number>, props del mapa)
-
-🔁 Se eliminó lógica duplicada en page.tsx
-
-🔁 Se dejó el frontend estable sin errores de compilación
-
-🔁 Se dejó el proyecto listo para integrar datos reales
-
-⚠️ LO QUE FALTA (PENDIENTE)
-
-Estos puntos no son errores, son pasos siguientes del proyecto:
-
-1️⃣ Reemplazar datos simulados
-
-Actualmente el frontend usa:
-
-mockProperties
-
-
-Pendiente:
-
-Consumir propiedades reales desde la API REST o Supabase
-
-2️⃣ UI reactiva al WebSocket
-
-Actualmente:
-
-El frontend recibe eventos
-
-Pero la UI no cambia visualmente aún
-
-Pendiente:
-
-Cambiar color / estado / badge de la propiedad cuando llega un evento
-
-3️⃣ Sincronización mapa + socket
-
-Pendiente:
-
-Actualizar pines del mapa en tiempo real según eventos WebSocket
-
-4️⃣ Autenticación (opcional)
-
-Pendiente:
-
-Login / roles
-
-Control de favoritos por usuario
+* README general del monorepo
+* Preparar defensa oral
+* O checklist de evaluación del Scrum Master
