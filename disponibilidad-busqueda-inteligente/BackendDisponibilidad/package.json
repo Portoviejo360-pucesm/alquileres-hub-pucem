@@ -1,5 +1,5 @@
 {
-  "name": "BeckendPanelDeDsiponibilidad",
+  "name": "backend-panel-de-disponibilidad",
   "version": "0.0.0",
   "scripts": {
     "build": "tsc",
