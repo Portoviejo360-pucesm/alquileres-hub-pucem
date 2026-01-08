@@ -113,7 +113,7 @@ model PropiedadServicio {
 }
 
 model Reserva {
-  id            Int      @id @default(autoincrement()) @map("id_reserva")
+  id            Int      @id @default(autoincrement())
   usuarioId     String   @map("usuario_id") @db.Uuid
   propiedadId   Int      @map("propiedad_id")
   fechaEntrada  DateTime @map("fecha_entrada") @db.Date 
@@ -130,7 +130,7 @@ model Reserva {
 }
 
 model Contrato {
-  id              Int      @id @default(autoincrement()) @map("id_contrato")
+  id              Int      @id @default(autoincrement())
   reservaId       Int      @unique @map("reserva_id")
   urlArchivo      String   @map("url_archivo")
   fechaGeneracion DateTime? @default(now()) @map("fecha_generacion") @db.Timestamp(6)
