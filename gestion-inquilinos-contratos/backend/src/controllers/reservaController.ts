@@ -50,7 +50,7 @@ export const cancel = async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Usuario no identificado' });
         }
 
-        const reserva = await reservaService.cancelReserva(Number(id), String(usuarioId));
+        const reserva = await reservaService.cancelReserva(id, String(usuarioId));
         res.json(reserva);
     } catch (error: any) {
         res.status(400).json({ error: error.message });

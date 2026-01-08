@@ -8,7 +8,7 @@ export const generar = async (req: Request, res: Response) => {
         // @ts-ignore
         const usuarioId = req.user?.id || req.body.usuarioId;
 
-        const contrato = await contratoService.generarContrato(Number(reservaId), String(usuarioId));
+        const contrato = await contratoService.generarContrato(reservaId, String(usuarioId));
         res.status(201).json(contrato);
     } catch (error: any) {
         res.status(400).json({ error: error.message });
@@ -21,7 +21,7 @@ export const descargar = async (req: Request, res: Response) => {
         // @ts-ignore
         const usuarioId = req.user?.id || req.query.usuarioId;
 
-        const contrato = await contratoService.getContratoByReserva(Number(reservaId), String(usuarioId));
+        const contrato = await contratoService.getContratoByReserva(reservaId, String(usuarioId));
 
         // Serve file
         // Note: In real app, redirect to signed URL or stream from storage.

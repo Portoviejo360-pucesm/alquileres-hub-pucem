@@ -80,7 +80,8 @@ export const getReservasByUser = async (usuarioId: string) => {
     });
 };
 
-export const cancelReserva = async (reservaId: number, usuarioId: string) => {
+
+export const cancelReserva = async (reservaId: string, usuarioId: string) => {
     const reserva = await prisma.reserva.findUnique({
         where: { id: reservaId }
     });

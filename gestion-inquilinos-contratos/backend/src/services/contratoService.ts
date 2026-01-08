@@ -1,7 +1,7 @@
 import { prisma } from '../config/db';
 import { generateContractPDF } from '../utils/pdfGenerator';
 
-export const generarContrato = async (reservaId: number, usuarioId: string) => {
+export const generarContrato = async (reservaId: string, usuarioId: string) => {
     // 1. Get Reservation Details
     const reserva = await prisma.reserva.findUnique({
         where: { id: reservaId },
@@ -61,7 +61,7 @@ export const generarContrato = async (reservaId: number, usuarioId: string) => {
     return contrato;
 };
 
-export const getContratoByReserva = async (reservaId: number, usuarioId: string) => {
+export const getContratoByReserva = async (reservaId: string, usuarioId: string) => {
     const contrato = await prisma.contrato.findUnique({
         where: { reservaId },
         include: { reserva: true }

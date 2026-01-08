@@ -118,9 +118,9 @@ model Reserva {
   propiedadId   Int      @map("propiedad_id")
   fechaEntrada  DateTime @map("fecha_entrada") @db.Date 
   fechaSalida   DateTime @map("fecha_salida") @db.Date 
-  totalPagar    Decimal  @map("total_pagar") @db.Decimal(10, 2)
-  estado        String   @default("PENDIENTE") @db.VarChar(20)
-  fechaCreacion DateTime? @default(now()) @map("fecha_creacion") @db.Timestamp(6)
+  totalPagar    Decimal       @map("total_pagar") @db.Decimal(10, 2)
+  estado        EstadoReserva @default(PENDIENTE)
+  fechaCreacion DateTime?     @default(now()) @map("fecha_creacion") @db.Timestamp(6)
 
   usuario     Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   propiedad   Propiedad @relation(fields: [propiedadId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -130,7 +130,7 @@ model Reserva {
 }
 
 model Contrato {
-  id              Int      @id @default(autoincrement())
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   reservaId       String   @unique @map("reserva_id") @db.Uuid
   urlArchivo      String   @map("url_archivo")
   fechaGeneracion DateTime? @default(now()) @map("fecha_generacion") @db.Timestamp(6)
@@ -138,4 +138,12 @@ model Contrato {
   reserva Reserva @relation(fields: [reservaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("contrato")
+}
+
+enum EstadoReserva {
+  PENDIENTE
+  CONFIRMADA
+  CANCELADA
+  FINALIZADA
+  @@map("estado_reserva_enum")
 }
