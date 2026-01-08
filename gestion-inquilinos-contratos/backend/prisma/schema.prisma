@@ -126,7 +126,7 @@ model Reserva {
   propiedad   Propiedad @relation(fields: [propiedadId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   contrato    Contrato?
 
-  @@map("reservas")
+  @@map("reserva")
 }
 
 model Contrato {
@@ -137,5 +137,5 @@ model Contrato {
 
   reserva Reserva @relation(fields: [reservaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@map("contratos")
+  @@map("contrato")
 }
