@@ -1,15 +1,13 @@
-import http from "node:http";
-import app from "./app";
-import { initSocket } from "./modules/tiempo-real/panel.gateway";
+import app from './app';
+import getPort from 'get-port';
 
-const PORT = process.env.PORT || 3000;
+async function startServer() {
+  // obtiene cualquier puerto libre del sistema
+  const port = await getPort();
 
-// crear servidor HTTP con app ya configurada
-const server = http.createServer(app);
+  app.listen(port, () => {
+    console.log(`🚀 Backend ejecutándose en puerto ${port}`);
+  });
+}
 
-// inicializar websocket
-initSocket(server);
-
-server.listen(PORT, () => {
-  console.log(`Backend running on port ${PORT}`);
-});
+startServer();

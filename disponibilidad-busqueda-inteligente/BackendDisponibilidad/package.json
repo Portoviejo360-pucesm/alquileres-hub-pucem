@@ -21,6 +21,7 @@
     "dayjs": "^1.11.19",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "get-port": "^7.1.0",
     "helmet": "^8.1.0",
     "inserturlparams": "^2.0.5",
     "jet-env": "^1.1.4",
