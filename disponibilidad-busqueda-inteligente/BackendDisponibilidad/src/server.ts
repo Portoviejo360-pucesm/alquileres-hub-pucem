@@ -1,13 +1,14 @@
 import app from './app';
-import getPort from 'get-port';
 
-async function startServer() {
-  // obtiene cualquier puerto libre del sistema
-  const port = await getPort();
+const PORT = process.env.PORT || 8004;
 
-  app.listen(port, () => {
-    console.log(`🚀 Backend ejecutándose en puerto ${port}`);
-  });
-}
-
-startServer();
+app.listen(PORT, () => {
+  console.log(`🚀 Módulo Disponibilidad ejecutándose en puerto ${PORT}`);
+  console.log(`📍 Endpoints disponibles:`);
+  console.log(`   GET  /propiedades`);
+  console.log(`   GET  /propiedades/:id`);
+  console.log(`   POST /propiedades`);
+  console.log(`   PUT  /propiedades/:id`);
+  console.log(`   PUT  /propiedades/:id/estado`);
+  console.log(`   GET  /filtros/propiedades`);
+});
