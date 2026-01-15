@@ -1,0 +1,3 @@
+[submodule "registro-arrendadores-propiedades/frontend"]
+	path = registro-arrendadores-propiedades/frontend
+	url = https://github.com/Portoviejo360-pucesm/front-alquileres-hub-pucem.git

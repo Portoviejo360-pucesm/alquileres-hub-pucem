@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id               String            @id @default(dbgenerated("gen_random_uuid()")) @map("id_usuario") @db.Uuid
+  rolId            Int               @default(2) @map("rol_id")
+  nombresCompletos String            @map("nombres_completos") @db.VarChar(100)
+  correo           String            @unique @db.VarChar(100)
+  passwordHash     String?           @map("password_hash")
+  fechaRegistro    DateTime?         @default(now()) @map("fecha_registro") @db.Timestamp(6)
+  perfilVerificado PerfilVerificado?
+  propiedades      Propiedad[]
+  rol              Rol               @relation(fields: [rolId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("usuarios")
+}
+
+model Rol {
+  id       Int       @id @default(autoincrement()) @map("id_rol")
+  nombre   String    @unique @db.VarChar(20)
+  usuarios Usuario[]
+
+  @@map("roles")
+}
+
+model PerfilVerificado {
+  id               Int       @id @default(autoincrement()) @map("id_verificacion")
+  usuarioId        String    @unique @map("usuario_id") @db.Uuid
+  cedulaRuc        String    @unique @map("cedula_ruc") @db.VarChar(13)
+  fotoDocumentoUrl String?   @map("foto_documento_url")
+  telefonoContacto String    @map("telefono_contacto") @db.VarChar(20)
+  biografiaCorta   String?   @map("biografia_corta")
+  estaVerificado   Boolean?  @default(false) @map("esta_verificado")
+  fechaSolicitud   DateTime? @default(now()) @map("fecha_solicitud") @db.Timestamp(6)
+  usuario          Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("perfil_verificado")
+}
+
+model Propiedad {
+  id                Int                 @id @default(autoincrement()) @map("id_propiedad")
+  propietarioId     String              @map("propietario_id") @db.Uuid
+  estadoId          Int                 @map("estado_id")
+  publicoObjetivoId Int?                @map("publico_objetivo_id")
+  tituloAnuncio     String              @map("titulo_anuncio") @db.VarChar(100)
+  descripcion       String?
+  precioMensual     Decimal             @map("precio_mensual") @db.Decimal(10, 2)
+  direccionTexto    String?             @map("direccion_texto") @db.VarChar(255)
+  latitudMapa       Decimal             @map("latitud_mapa") @db.Decimal(9, 6)
+  longitudMapa      Decimal             @map("longitud_mapa") @db.Decimal(9, 6)
+  esAmoblado        Boolean?            @default(false) @map("es_amoblado")
+  fechaCreacion     DateTime?           @default(now()) @map("fecha_creacion") @db.Timestamp(6)
+  fotos             FotoPropiedad[]
+  servicios         PropiedadServicio[]
+  estado            EstadoPropiedad     @relation(fields: [estadoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  propietario       Usuario             @relation(fields: [propietarioId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  publicoObjetivo   TipoPublico?        @relation(fields: [publicoObjetivoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("propiedades")
+}
+
+model EstadoPropiedad {
+  id          Int         @id @default(autoincrement()) @map("id_estado")
+  nombre      String      @unique @db.VarChar(20)
+  propiedades Propiedad[]
+
+  @@map("estados_propiedad")
+}
+
+model TipoPublico {
+  id          Int         @id @default(autoincrement()) @map("id_tipo")
+  nombre      String      @unique @db.VarChar(30)
+  propiedades Propiedad[]
+
+  @@map("tipo_publico")
+}
+
+model FotoPropiedad {
+  id          Int       @id @default(autoincrement()) @map("id_foto")
+  propiedadId Int       @map("propiedad_id")
+  urlImagen   String    @map("url_imagen")
+  esPrincipal Boolean?  @default(false) @map("es_principal")
+  propiedad   Propiedad @relation(fields: [propiedadId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("fotos_propiedad")
+}
+
+model CatalogoServicio {
+  id          Int                 @id @default(autoincrement()) @map("id_servicio")
+  nombre      String              @unique @db.VarChar(50)
+  propiedades PropiedadServicio[]
+
+  @@map("catalogo_servicios")
+}
+
+model PropiedadServicio {
+  propiedadId      Int              @map("propiedad_id")
+  servicioId       Int              @map("servicio_id")
+  incluidoEnPrecio Boolean?         @default(true) @map("incluido_en_precio")
+  propiedad        Propiedad        @relation(fields: [propiedadId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  servicio         CatalogoServicio @relation(fields: [servicioId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([propiedadId, servicioId])
+  @@map("propiedad_servicios")
+}
