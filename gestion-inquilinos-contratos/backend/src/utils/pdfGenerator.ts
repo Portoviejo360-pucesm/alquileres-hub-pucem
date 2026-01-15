@@ -92,7 +92,7 @@ export const generateContractPDF = (data: ContractData): Promise<string> => {
                 'PROVINCIA': 'Manabí',
                 'NUMERO_DE_METROS': 'N/A', // Not in DB
                 'DESCRIPCION': data.propiedad.descripcion,
-                'VALOR_ARRIENDO_EN_PALABRAS': numeroALetras(data.propiedad.precio).toUpperCase(), // Using numeral for now
+                'VALOR_ARRIENDO_EN PALABRAS': numeroALetras(data.propiedad.precio).toUpperCase(), // Fixed typo (space)
                 'VALOR_DE_ARRIENDO_EN_NUMEROS': data.propiedad.precio.toFixed(2),
                 'NUMERO_CUENTA': 'XXXXXXXXXX',
                 'NOMBRE_BANCO': 'BANCO GENÉRICO',
@@ -101,8 +101,8 @@ export const generateContractPDF = (data: ContractData): Promise<string> => {
                     : (duracionAnios > 0
                         ? `${duracionAnios} año${duracionAnios > 1 ? 's' : ''}${duracionMeses > 0 ? ` y ${duracionMeses} mes${duracionMeses > 1 ? 'es' : ''}` : ''}`
                         : `${duracionMeses} mes${duracionMeses > 1 ? 'es' : ''}`),
-                'VALOS_MONETARIO_DE_GARANTIA_EN_PALABRAS': numeroALetras(data.propiedad.precio).toUpperCase(),
-                'VALOS_MONETARIO_DE_GARANTIA_EN_NUMEROS': data.propiedad.precio.toFixed(2),
+                'VALOR_MONETARIO_DE_GARANTIA_EN_PALABRAS': numeroALetras(data.propiedad.precio).toUpperCase(), // Fixed VALOS -> VALOR
+                'VALOR_MONETARIO_DE_GARANTIA_EN_NUMEROS': data.propiedad.precio.toFixed(2), // Fixed VALOS -> VALOR
                 'NUMERO_DE_CEDULA': data.arrendador.cedula,
                 'NUMERO_CED': data.arrendatario.cedula
             };
