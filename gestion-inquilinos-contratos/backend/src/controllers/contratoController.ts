@@ -4,13 +4,16 @@ import path from 'path';
 
 export const generar = async (req: Request, res: Response) => {
     try {
+        console.log('[Controller] Generar Contrato Request Body:', req.body);
         const { reservaId } = req.body;
         // @ts-ignore
         const usuarioId = req.user?.id || req.body.usuarioId;
+        console.log('[Controller] Usuario ID resolved:', usuarioId);
 
         const contrato = await contratoService.generarContrato(reservaId, String(usuarioId));
         res.status(201).json(contrato);
     } catch (error: any) {
+        console.error('[Controller] Error generating contract:', error);
         res.status(400).json({ error: error.message });
     }
 };
