@@ -1,9 +1,12 @@
 import { pool } from "../config/database";
 import { CrearPropiedadDTO } from "../modules/propiedades/DTO/crear-propiedad.dto";
-import { emitirCambioEstado } from "../modules/tiempo-real/panel.gateway";
 
+/**
+ * GET /propiedades
+ * Lista propiedades con estado y público
+ */
 export const obtenerDisponibles = async () => {
-  const query = `
+  const { rows } = await pool.query(`
     SELECT
       p.id_propiedad,
       p.titulo_anuncio,
@@ -19,14 +22,45 @@ export const obtenerDisponibles = async () => {
     FROM propiedades p
     JOIN estados_propiedad e ON p.estado_id = e.id_estado
     JOIN tipo_publico tp ON p.publico_objetivo_id = tp.id_tipo
-    WHERE p.estado_id = 1
-    ORDER BY p.id_propiedad DESC;
-  `;
+    ORDER BY p.id_propiedad DESC
+  `);
 
-  const { rows } = await pool.query(query);
   return rows;
 };
 
+/**
+ * GET /propiedades/:id
+ * Obtener UNA propiedad por ID
+ */
+export const obtenerPropiedadPorId = async (id: number) => {
+  const { rows } = await pool.query(
+    `
+    SELECT
+      p.id_propiedad,
+      p.titulo_anuncio,
+      p.descripcion,
+      p.precio_mensual,
+      p.direccion_texto,
+      p.latitud_mapa,
+      p.longitud_mapa,
+      p.es_amoblado,
+      p.fecha_creacion,
+      e.nombre AS estado,
+      tp.nombre AS tipo_publico
+    FROM propiedades p
+    JOIN estados_propiedad e ON p.estado_id = e.id_estado
+    JOIN tipo_publico tp ON p.publico_objetivo_id = tp.id_tipo
+    WHERE p.id_propiedad = $1
+    `,
+    [id]
+  );
+
+  return rows[0]; // undefined si no existe
+};
+
+/**
+ * POST /propiedades
+ */
 export const crearPropiedad = async (data: CrearPropiedadDTO) => {
   const { rows } = await pool.query(
     `
@@ -62,16 +96,19 @@ export const crearPropiedad = async (data: CrearPropiedadDTO) => {
   return rows[0];
 };
 
-  // 2️⃣ Traer la propiedad COMPLETA con joins
-export const  cambiarEstado = async (id: number, estado_id: number) => {
+/**
+ * PUT /propiedades/:id/estado
+ * 🔥 SOLO CAMBIA ESTADO
+ */
+export const cambiarEstado = async (id: number, estado_id: number) => {
   const { rows } = await pool.query(
     `
     UPDATE propiedades p
     SET estado_id = $1
     FROM estados_propiedad e, tipo_publico tp
     WHERE p.id_propiedad = $2
-      AND p.publico_objetivo_id = tp.id_tipo
       AND e.id_estado = $1
+      AND tp.id_tipo = p.publico_objetivo_id
     RETURNING
       p.id_propiedad,
       p.estado_id,
@@ -85,5 +122,44 @@ export const  cambiarEstado = async (id: number, estado_id: number) => {
   return rows[0];
 };
 
+/**
+ * PUT /propiedades/:id
+ * ✏️ Edición completa tipo Amazon
+ */
+export const updatePropiedad = async (id: number, data: any) => {
+  const allowedFields = [
+    "titulo_anuncio",
+    "descripcion",
+    "precio_mensual",
+    "direccion_texto",
+    "latitud_mapa",
+    "longitud_mapa",
+    "es_amoblado",
+    "estado_id",
+    "publico_objetivo_id",
+  ];
 
+  const fields: string[] = [];
+  const values: any[] = [];
+  let index = 1;
 
+  for (const key of allowedFields) {
+    if (data[key] !== undefined) {
+      fields.push(`${key} = $${index}`);
+      values.push(data[key]);
+      index++;
+    }
+  }
+
+  if (fields.length === 0) return null;
+
+  const query = `
+    UPDATE propiedades
+    SET ${fields.join(", ")}
+    WHERE id_propiedad = $${index}
+    RETURNING *
+  `;
+
+  const { rows } = await pool.query(query, [...values, id]);
+  return rows[0];
+};

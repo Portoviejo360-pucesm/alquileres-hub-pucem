@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
 import {
   obtenerDisponibles,
+  obtenerPropiedadPorId,
   crearPropiedad,
   cambiarEstado,
+  updatePropiedad,
 } from "../services/propiedades.service";
 import { CrearPropiedadDTO } from "../modules/propiedades/DTO/crear-propiedad.dto";
 import { emitirCambioEstado } from "../modules/tiempo-real/panel.gateway";
@@ -10,7 +12,7 @@ import { success, error } from "../utils/response";
 
 /**
  * GET /propiedades
- * Devuelve propiedades DISPONIBLES
+ * Lista propiedades
  */
 export const getPropiedadesDisponibles = async (
   _req: Request,
@@ -18,113 +20,118 @@ export const getPropiedadesDisponibles = async (
 ) => {
   try {
     const data = await obtenerDisponibles();
-    return success(res, data, "Propiedades disponibles");
+    return success(res, data, "Propiedades encontradas");
   } catch (err) {
-    console.error("Error GET propiedades:", err);
-    return error(res, "Error al obtener propiedades disponibles");
+    console.error(err);
+    return error(res, "Error al obtener propiedades");
+  }
+};
+
+/**
+ * GET /propiedades/:id
+ * Obtener UNA propiedad por ID
+ */
+export const getPropiedadPorId = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (Number.isNaN(id)) {
+      return error(res, "ID inválido", 400);
+    }
+
+    const propiedad = await obtenerPropiedadPorId(id);
+
+    if (!propiedad) {
+      return error(res, "Propiedad no encontrada", 404);
+    }
+
+    return success(res, propiedad, "Propiedad encontrada");
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al obtener propiedad");
   }
 };
 
 /**
  * POST /propiedades
- * Crea una nueva propiedad
+ * Crear propiedad
  */
 export const postPropiedad = async (req: Request, res: Response) => {
   try {
     const body = req.body as CrearPropiedadDTO;
 
-    const {
-      propietario_id,
-      estado_id,
-      publico_objetivo_id,
-      titulo_anuncio,
-      descripcion,
-      precio_mensual,
-      direccion_texto,
-      latitud_mapa,
-      longitud_mapa,
-      es_amoblado,
-    } = body;
-
-    if (!propietario_id) {
-      return error(res, "propietario_id es obligatorio", 400);
+    if (!body.propietario_id || !body.estado_id || !body.publico_objetivo_id) {
+      return error(res, "Campos obligatorios faltantes", 400);
     }
 
-    if (!estado_id) {
-      return error(res, "estado_id es obligatorio", 400);
-    }
-
-    if (!publico_objetivo_id) {
-      return error(res, "publico_objetivo_id es obligatorio", 400);
-    }
-
-    const propiedadCreada = await crearPropiedad({
-      propietario_id,
-      estado_id,
-      publico_objetivo_id,
-      titulo_anuncio,
-      descripcion,
-      precio_mensual,
-      direccion_texto,
-      latitud_mapa,
-      longitud_mapa,
-      es_amoblado,
-    });
-
-    return success(res, propiedadCreada, "Propiedad creada correctamente", 201);
-  } catch (err: any) {
-    console.error("Error POST propiedad:", err);
+    const propiedad = await crearPropiedad(body);
+    return success(res, propiedad, "Propiedad creada", 201);
+  } catch (err) {
+    console.error(err);
     return error(res, "Error al crear propiedad");
   }
 };
 
 /**
  * PUT /propiedades/:id/estado
- * Cambia el estado de una propiedad + emite WebSocket
+ * 📡 Cambia estado + emite WebSocket
  */
 export const putEstadoPropiedad = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
     const { estado_id } = req.body;
 
-    if (Number.isNaN(id)) {
-      return res.status(400).json({ message: "ID inválido" });
+    if (Number.isNaN(id) || !estado_id) {
+      return error(res, "ID o estado inválido", 400);
     }
 
-    if (!estado_id) {
-      return res.status(400).json({
-        message: "estado_id es obligatorio",
-      });
+    const propiedad = await cambiarEstado(id, estado_id);
+
+    if (!propiedad) {
+      return error(res, "Propiedad no encontrada", 404);
     }
-    const data = await cambiarEstado(id, estado_id);
 
-if (!data) {
-  return res.status(404).json({ message: "Propiedad no encontrada" });
-}
-
-// 🔥 Emitir WS completo
-emitirCambioEstado({
-  id_propiedad: data.id_propiedad,
-  estado_id: data.estado_id,
-  estado: data.estado,
-  precio_mensual: data.precio_mensual,
-  publico_objetivo: data.publico_objetivo,
-  timestamp: new Date(),
-});
-
-return res.status(200).json({
-  success: true,
-  message: "Estado actualizado",
-  data,
-});
-
-
-
-  } catch (error) {
-    console.error("Error PUT estado propiedad:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Error al actualizar estado",
+    emitirCambioEstado({
+      id_propiedad: propiedad.id_propiedad,
+      estado_id: propiedad.estado_id,
+      estado: propiedad.estado,
+      precio_mensual: propiedad.precio_mensual,
+      publico_objetivo: propiedad.publico_objetivo,
+      timestamp: new Date(),
     });
+
+    return success(res, propiedad, "Estado actualizado");
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al actualizar estado");
+  }
+};
+
+/**
+ * PUT /propiedades/:id
+ * ✏️ Edición completa (sin WebSocket)
+ */
+export const putPropiedad = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (Number.isNaN(id)) {
+      return error(res, "ID inválido", 400);
+    }
+
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return error(res, "No se enviaron campos para actualizar", 400);
+    }
+
+    const propiedad = await updatePropiedad(id, req.body);
+
+    if (!propiedad) {
+      return error(res, "Propiedad no encontrada", 404);
+    }
+
+    return success(res, propiedad, "Propiedad actualizada");
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al actualizar propiedad");
   }
 };
