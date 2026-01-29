@@ -83,9 +83,9 @@ export const generateContractPDF = (data: ContractData): Promise<string> => {
             const filePath = path.join(uploadDir, fileName);
 
             // Path to the markdown template
-            const templatePath = path.join(__dirname, '../../../Contrato-Arrendamiento.md');
+            const templatePath = path.join(__dirname, '../../assets/templates/Contrato-Arrendamiento.md');
             // Header Logo Path
-            const logoPath = path.join(__dirname, '../../../../front-alquileres-hub-pucem-main/public/Portoviejo360.png');
+            const logoPath = path.join(__dirname, '../../assets/images/Portoviejo360logo.png');
 
             if (!fs.existsSync(uploadDir)) {
                 fs.mkdirSync(uploadDir, { recursive: true });
@@ -147,42 +147,26 @@ export const generateContractPDF = (data: ContractData): Promise<string> => {
                         ? `${duracionAnios} año${duracionAnios > 1 ? 's' : ''}${duracionMeses > 0 ? ` y ${duracionMeses} mes${duracionMeses > 1 ? 'es' : ''}` : ''}`
                         : `${duracionMeses} mes${duracionMeses > 1 ? 'es' : ''}`),
                 // Fix for typo in markdown template (VALOS instead of VALOR)
-                'VALOS_MONETARIO_DE_GARANTIA_EN_PALABRAS': numeroALetras(data.propiedad.precio),
+                'VALOS_MONETARIO_DE_GARANTIA_EN PALABRAS': numeroALetras(data.propiedad.precio),
                 'VALOS_MONETARIO_DE_GARANTIA_EN_NUMEROS': data.propiedad.precio.toFixed(2),
                 'NUMERO_DE_CEDULA': data.arrendador.cedula,
-                'NUMERO_CED': data.arrendatario.cedula
+                'NUMERO_CED': data.arrendatario.cedula,
+                'TRIM_NOMBRE_ARRENDADOR': data.arrendador.nombre,
+                'TRIM_NOMBRE_ARRENDATARIO': data.arrendatario.nombre
             };
 
             // Apply replacements
             // Apply replacements safely
-            // Use regex with word boundaries to avoid replacing substrings in other keys, but handle keys with spaces explicitly
             Object.keys(replacements).forEach(key => {
-                // Escape special regex characters in the key
                 const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-                // If key has special characters or spaces that confuse \b, we might need a simpler approach
-                // But \b works on [a-zA-Z0-9_]. Spaces are non-word characters. 
-                // "VALOR_ARRIENDO_EN PALABRAS" -> \bV...s\b.  Space matches non-word boundary? No.
-                // "EN " -> N is word, space is non-word. \b matches between N and space.
-                // So \bKEY\b works for "VALOR...EN PALABRAS" if it is surrounded by non-word chars in the text.
-                // However, strictly, let's allow flexibility.
-
                 const pattern = escapedKey.replace(/ /g, '\\s+');
-
-                // Use the pattern. If it had spaces originally, we use the flexible pattern without \b constraint on the inside space
                 const regex = key.includes(' ')
-                    ? new RegExp(pattern, 'g') // No \b for multi-word keys to be safe
+                    ? new RegExp(pattern, 'g')
                     : new RegExp(`\\b${escapedKey}\\b`, 'g');
 
                 if (content.match(regex)) {
                     console.log(`[PDF] Replacing key: ${key} with value: ${replacements[key]}`);
-                } else {
-                    // Debug: Check why it's not matching if we expect it to
-                    if (key.includes('VALOR_ARRIENDO')) {
-                        console.log(`[PDF] WARNING: Key ${key} NOT FOUND in content. Regex used: ${pattern}`);
-                    }
                 }
-
                 content = content.replace(regex, replacements[key]);
             });
 
@@ -197,28 +181,52 @@ export const generateContractPDF = (data: ContractData): Promise<string> => {
             doc.moveDown();
 
             // Body
-            // Use trim() to remove trailing whitespace from the file (prevents ghost page at end)
-            // But do NOT filter internal empty lines, as they provide necessary vertical spacing (e.g. signatures).
             const lines = content.trim().split('\n');
 
             let lastNonEmptyLine = '';
 
-            lines.forEach((line, lineIndex) => {
+            // Helper to fix UTF-8 for PDFKit standard fonts (WinAnsi)
+            const encodeForPDF = (str: string): string => {
+                // Manual mapping for Spanish characters to WinAnsi (Cp1252)
+                return str
+                    .replace(/á/g, '\xE1')
+                    .replace(/é/g, '\xE9')
+                    .replace(/í/g, '\xED')
+                    .replace(/ó/g, '\xF3')
+                    .replace(/ú/g, '\xFA')
+                    .replace(/ñ/g, '\xF1')
+                    .replace(/Á/g, '\xC1')
+                    .replace(/É/g, '\xC9')
+                    .replace(/Í/g, '\xCD')
+                    .replace(/Ó/g, '\xD3')
+                    .replace(/Ú/g, '\xDA')
+                    .replace(/Ñ/g, '\xD1')
+                    .replace(/ü/g, '\xFC')
+                    .replace(/Ü/g, '\xDC')
+                    .replace(/¿/g, '\xBF')
+                    .replace(/¡/g, '\xA1')
+                    .replace(/º/g, '\xBA')
+                    .replace(/ª/g, '\xAA');
+            };
+
+            for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+                const line = lines[lineIndex];
                 const trimmedLine = line.trim();
 
-                if (trimmedLine.includes('CONTRATO DE ARRENDAMIENTO')) return;
+                // Skip processing the signature lines in the normal flow
+                // We detect them by the underscore line or the headers
+                if (trimmedLine.startsWith('___') || trimmedLine.includes('EL ARRENDADOR') || trimmedLine.includes('TRIM_NOMBRE') || trimmedLine.includes('C.C. ')) {
+                    // Check if it's the signature block context (near end of file)
+                    if (lineIndex > lines.length - 10) continue;
+                }
 
-                // Handle empty lines explicitly for spacing
+                if (trimmedLine.includes('CONTRATO DE ARRENDAMIENTO')) continue;
+
                 if (trimmedLine === '') {
                     if (lineIndex < lines.length - 1) {
-                        // Check if the previous line was a signature header. If so, reduce spacing DRASTICALLY.
-                        if (lastNonEmptyLine.includes('EL ARRENDADOR') || lastNonEmptyLine.includes('EL ARRENDATARIO')) {
-                            doc.moveDown(0.1); // Minimal space between Title and Name
-                        } else {
-                            doc.moveDown(0.5); // Normal paragraph spacing
-                        }
+                        doc.moveDown(0.5);
                     }
-                    return;
+                    continue;
                 }
 
                 lastNonEmptyLine = trimmedLine;
@@ -227,53 +235,84 @@ export const generateContractPDF = (data: ContractData): Promise<string> => {
                 const indent = trimmedLine.startsWith('-') ? 20 : 0;
 
                 // Parse for **bold** markers
-                // Filter out empty parts so we don't try to print empty strings which might mess up 'continued' logic
                 const parts = trimmedLine.split(/(\*\*.*?\*\*)/g).filter(p => p !== '');
-
-                // Clean simple render without complex space shifting to debug justification issue
-                // The large gap suggests the 'justify' might still be implicitly active or the space shifting created a weird chunk.
-                // Let's rely on standard left alignment.
 
                 doc.text('', { indent, continued: true, align: 'justify' });
 
                 parts.forEach((part, index) => {
                     const isLastPart = index === parts.length - 1;
                     const isLastLine = lineIndex === lines.length - 1;
-                    // Keep continued true if it's not the last part OR if it's the last line (to avoid final LF)
                     const shouldContinue = !isLastPart || isLastLine;
 
-                    // Handle leading space explicitly because pdfkit + justify can be tricky with it
-                    // Check if we need to inject a space 'manually'
                     const hasLeadingSpace = part.startsWith(' ');
-                    const textContent = hasLeadingSpace ? part.slice(1) : part;
+                    const rawText = hasLeadingSpace ? part.slice(1) : part;
+                    const textContent = encodeForPDF(rawText);
 
                     if (hasLeadingSpace) {
-                        // Print a distinct space to ensure it's not eaten
                         doc.text(' ', { continued: true, align: 'justify', indent: 0 });
                     }
 
                     if (part.startsWith('**') && part.endsWith('**')) {
-                        // Bold text (usually doesn't start with space based on markdown split, but generic handling)
-                        const text = part.slice(2, -2); // Remove **
-                        doc.font('Helvetica-Bold').text(text, { continued: shouldContinue, align: 'justify', indent: 0 });
+                        const text = part.slice(2, -2);
+                        const boldContent = encodeForPDF(text);
+                        doc.font('Helvetica-Bold').text(boldContent, { continued: shouldContinue, align: 'justify', indent: 0 });
                     } else {
-                        // Normal text
-                        // Use textContent (stripped of leading space we just handled)
                         if (textContent.length > 0) {
                             doc.font('Helvetica').text(textContent, { continued: shouldContinue, align: 'justify', indent: 0 });
-                        } else if (shouldContinue && !hasLeadingSpace) {
-                            // Empty string part? Should be filtered out but just in case
                         }
                     }
                 });
 
-                // End line (reset continued)
-                doc.font('Helvetica'); // Reset to normal
+                doc.font('Helvetica');
+                doc.moveDown(0.5); // Ensure spacing between paragraphs
+            } // End of for loop through lines
 
-                if (lineIndex < lines.length - 1) {
-                    doc.moveDown(0.5);
-                }
-            });
+            // CRITICAL FIX: Flush any pending 'continued' state from the last line
+            doc.text('', { continued: false });
+
+            // Draw Signatures Manually
+
+            if (doc.y > 600) {
+                doc.addPage();
+                doc.on('pageAdded', () => drawHeader()); // Ensure header is on new page too if needed logic
+            } else {
+                doc.moveDown(4); // Add spacing before signatures
+            }
+
+            const startSignatureY = doc.y;
+            const leftColX = 50;
+            const rightColX = 300;
+            const colWidth = 200;
+
+            // Draw Lines
+            doc.moveTo(leftColX, startSignatureY).lineTo(leftColX + colWidth, startSignatureY).stroke();
+            doc.moveTo(rightColX, startSignatureY).lineTo(rightColX + colWidth, startSignatureY).stroke();
+
+            let currentTextY = startSignatureY + 15; // Start text slightly below line
+
+            // Header
+            doc.font('Helvetica-Bold');
+            doc.text('EL ARRENDADOR', leftColX, currentTextY, { width: colWidth, align: 'left', lineBreak: false });
+            doc.text('EL ARRENDATARIO', rightColX, currentTextY, { width: colWidth, align: 'left', lineBreak: false });
+
+            currentTextY += 25; // Manual spacing
+
+            // Names
+            doc.font('Helvetica');
+            const nombreArrendador = encodeForPDF(data.arrendador.nombre);
+            const nombreArrendatario = encodeForPDF(data.arrendatario.nombre);
+
+            doc.text(nombreArrendador, leftColX, currentTextY, { width: colWidth, align: 'left', lineBreak: false });
+            doc.text(nombreArrendatario, rightColX, currentTextY, { width: colWidth, align: 'left', lineBreak: false });
+
+            currentTextY += 25;
+
+            // IDs
+            const cedulaArrendador = `C.C. ${data.arrendador.cedula}`;
+            const cedulaArrendatario = `C.C. ${data.arrendatario.cedula}`;
+
+            doc.text(cedulaArrendador, leftColX, currentTextY, { width: colWidth, align: 'left', lineBreak: false });
+            doc.text(cedulaArrendatario, rightColX, currentTextY, { width: colWidth, align: 'left', lineBreak: false });
 
             doc.end();
 
