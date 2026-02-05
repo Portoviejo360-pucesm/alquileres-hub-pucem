@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portoviejo360 - Gestión de Incidencias</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🏙️ Portoviejo360</h1>
+            <p class="subtitle">Sistema de Gestión de Incidencias</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Configuración API -->
+        <section class="card config-section">
+            <h2>⚙️ Configuración</h2>
+            <div class="form-group">
+                <label for="apiUrl">URL del API:</label>
+                <input type="text" id="apiUrl" value="http://localhost:3000/api" placeholder="http://localhost:3000/api">
+            </div>
+            <div class="form-group">
+                <label for="authToken">Token JWT:</label>
+                <input type="text" id="authToken" placeholder="Ingresa tu token de autenticación">
+            </div>
+            <button id="btnTestConnection" class="btn btn-secondary">🔌 Probar Conexión</button>
+            <span id="connectionStatus" class="status-badge"></span>
+        </section>
+
+        <!-- Crear Incidencia -->
+        <section class="card">
+            <h2>➕ Crear Nueva Incidencia</h2>
+            <form id="formCreateIncident">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="titulo">Título:</label>
+                        <input type="text" id="titulo" required minlength="3" maxlength="200" placeholder="Título de la incidencia">
+                    </div>
+                    <div class="form-group">
+                        <label for="propiedad_id">ID Propiedad:</label>
+                        <input type="number" id="propiedad_id" required min="1" value="1" placeholder="ID de propiedad">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="descripcion">Descripción:</label>
+                    <textarea id="descripcion" required minlength="10" rows="3" placeholder="Describe la incidencia con al menos 10 caracteres"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="prioridad_codigo">Prioridad:</label>
+                        <select id="prioridad_codigo" required>
+                            <option value="LOW">🟢 Baja</option>
+                            <option value="MEDIUM" selected>🟡 Media</option>
+                            <option value="HIGH">🟠 Alta</option>
+                            <option value="CRITICAL">🔴 Crítica</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="categoria_codigo">Categoría:</label>
+                        <select id="categoria_codigo">
+                            <option value="">Sin categoría</option>
+                            <option value="ELECTRICAL">⚡ Eléctrica</option>
+                            <option value="PLUMBING">🔧 Plomería</option>
+                            <option value="STRUCTURAL">🏗️ Estructural</option>
+                            <option value="GENERAL">📋 General</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="incidentFiles">📎 Archivos adjuntos (opcional, máx. 5 imágenes):</label>
+                    <input type="file" id="incidentFiles" multiple accept="image/jpeg,image/png,image/jpg,image/webp">
+                    <div id="filePreview" class="file-preview"></div>
+                </div>
+                <button type="submit" class="btn btn-primary">Crear Incidencia</button>
+            </form>
+            <div id="createResult" class="result-box"></div>
+        </section>
+
+        <!-- Listar Incidencias -->
+        <section class="card">
+            <h2>📋 Listar Incidencias</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="filterStatus">Filtrar por Estado:</label>
+                    <select id="filterStatus">
+                        <option value="">Todos</option>
+                        <option value="OPEN">Abierto</option>
+                        <option value="IN_PROGRESS">En Progreso</option>
+                        <option value="RESOLVED">Resuelto</option>
+                        <option value="CLOSED">Cerrado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filterLimit">Límite:</label>
+                    <input type="number" id="filterLimit" value="10" min="1" max="100">
+                </div>
+            </div>
+            <button id="btnListIncidents" class="btn btn-primary">🔄 Cargar Incidencias</button>
+            <div id="incidentsList" class="incidents-grid"></div>
+        </section>
+
+        <!-- Operaciones por ID -->
+        <section class="card">
+            <h2>🔍 Operaciones por ID</h2>
+            <div class="form-group">
+                <label for="incidentId">ID de Incidencia:</label>
+                <input type="number" id="incidentId" min="1" placeholder="Ingresa el ID">
+            </div>
+            <div class="button-group">
+                <button id="btnGetById" class="btn btn-secondary">📄 Obtener</button>
+                <button id="btnDeleteById" class="btn btn-danger">🗑️ Eliminar</button>
+            </div>
+            <div id="detailResult" class="result-box"></div>
+        </section>
+
+        <!-- Actualizar Estado -->
+        <section class="card">
+            <h2>🔄 Actualizar Estado</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="updateId">ID de Incidencia:</label>
+                    <input type="number" id="updateId" min="1" placeholder="ID">
+                </div>
+                <div class="form-group">
+                    <label for="newStatus">Nuevo Estado:</label>
+                    <select id="newStatus" required>
+                        <option value="OPEN">🟢 Abierto</option>
+                        <option value="IN_PROGRESS">🔵 En Progreso</option>
+                        <option value="RESOLVED">🟣 Resuelto</option>
+                        <option value="CLOSED">⚫ Cerrado</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="statusDescription">Descripción del cambio:</label>
+                <input type="text" id="statusDescription" placeholder="Opcional: razón del cambio de estado">
+            </div>
+            <button id="btnUpdateStatus" class="btn btn-primary">Actualizar Estado</button>
+            <div id="updateResult" class="result-box"></div>
+        </section>
+
+        <!-- Comentarios -->
+        <section class="card">
+            <h2>💬 Agregar Comentario</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="commentIncidentId">ID de Incidencia:</label>
+                    <input type="number" id="commentIncidentId" min="1" placeholder="ID">
+                </div>
+                <div class="form-group">
+                    <label for="commentInternal">
+                        <input type="checkbox" id="commentInternal"> Comentario Interno
+                    </label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="commentContent">Comentario:</label>
+                <textarea id="commentContent" rows="2" placeholder="Escribe tu comentario"></textarea>
+            </div>
+            <button id="btnAddComment" class="btn btn-primary">Agregar Comentario</button>
+            <div id="commentResult" class="result-box"></div>
+        </section>
+
+        <!-- Log de Peticiones -->
+        <section class="card">
+            <h2>📝 Log de Peticiones</h2>
+            <button id="btnClearLog" class="btn btn-secondary">🧹 Limpiar Log</button>
+            <div id="requestLog" class="log-container"></div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Portoviejo360 - Frontend de Pruebas | Versión 1.0</p>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
