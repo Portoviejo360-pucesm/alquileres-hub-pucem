@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { PropiedadController } from '../controllers/propiedad.controller';
 import { authenticate } from '../middlewares/auth.middleware';
+import { requireVerification, isOwner } from '../middlewares/verification.middleware';
 import { validate } from '../middlewares/validation.middleware';
 import { crearPropiedadSchema, actualizarPropiedadSchema } from '../validators/propiedad.validator';
 
@@ -11,7 +12,7 @@ const router = Router();
 // ============================================
 
 /**
- * @route   GET /api/v1/propiedades
+ * @route   GET /api/propiedades
  * @desc    Obtener todas las propiedades con filtros opcionales
  * @access  Public
  * @query   estadoId, publicoObjetivoId, precioMin, precioMax, esAmoblado
@@ -22,7 +23,7 @@ router.get(
 );
 
 /**
- * @route   GET /api/v1/propiedades/:id
+ * @route   GET /api/propiedades/:id
  * @desc    Obtener una propiedad por ID
  * @access  Public
  */
@@ -32,53 +33,60 @@ router.get(
 );
 
 // ============================================
-// RUTAS PROTEGIDAS (requieren autenticación)
+// RUTAS PROTEGIDAS (requieren autenticación Y verificación)
 // ============================================
 
 /**
- * @route   GET /api/v1/propiedades/mis-propiedades
+ * @route   GET /api/propiedades/mis-propiedades
  * @desc    Obtener propiedades del usuario autenticado
- * @access  Private
+ * @access  Private (requiere verificación)
  */
 router.get(
     '/mis-propiedades',
     authenticate,
+    requireVerification,
     PropiedadController.obtenerMisPropiedades
 );
 
 /**
- * @route   POST /api/v1/propiedades
+ * @route   POST /api/propiedades
  * @desc    Crear una nueva propiedad
- * @access  Private (requiere perfil verificado)
+ * @access  Private (requiere verificación)
  */
 router.post(
     '/',
     authenticate,
+    requireVerification,
     validate(crearPropiedadSchema),
     PropiedadController.crearPropiedad
 );
 
 /**
- * @route   PUT /api/v1/propiedades/:id
+ * @route   PUT /api/propiedades/:id
  * @desc    Actualizar una propiedad
- * @access  Private (solo el propietario)
+ * @access  Private (solo el propietario verificado)
  */
 router.put(
     '/:id',
     authenticate,
+    requireVerification,
+    isOwner('id'),
     validate(actualizarPropiedadSchema),
     PropiedadController.actualizarPropiedad
 );
 
 /**
- * @route   DELETE /api/v1/propiedades/:id
+ * @route   DELETE /api/propiedades/:id
  * @desc    Eliminar una propiedad
- * @access  Private (solo el propietario)
+ * @access  Private (solo el propietario verificado)
  */
 router.delete(
     '/:id',
     authenticate,
+    requireVerification,
+    isOwner('id'),
     PropiedadController.eliminarPropiedad
 );
 
 export default router;
+

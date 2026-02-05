@@ -27,9 +27,11 @@ import contratoRoutes from '../../gestion-inquilinos-contratos/backend/src/route
 import { propiedadesRouter as propiedadesDisponibilidadRouter } from '../../disponibilidad-busqueda-inteligente/BackendDisponibilidad/src/routers/propiedades.routes';
 import { filtrosRouter } from '../../disponibilidad-busqueda-inteligente/BackendDisponibilidad/src/routers/filtros.routes';
 
-// Módulo 4: Reportes y Quejas (Puerto 8003) - PENDIENTE DE IMPLEMENTACIÓN
-// TODO: Cuando se implemente el módulo de reportes, importar sus rutas aquí
-// import reportesRoutes from '../../reportes-quejas-mantenimiento/backend/src/routes/reportes.routes';
+// Módulo 4: Reportes, Quejas y Mantenimiento (Puerto 8003)
+// DESHABILITADO: Prisma Client tiene rutas hardcodeadas de macOS en node_modules
+// El módulo debe ser reconstruido en la máquina original (macOS) o en un ambiente limpio
+// import incidentRoutes from '../../reportes-quejas-mantenimiento/backend/src/routes/incident.routes';
+
 
 // ============================================
 // CONFIGURACIÓN DE LA APLICACIÓN
@@ -78,8 +80,9 @@ app.get('/health', (_req: Request, res: Response) => {
             registro: 'active',
             inquilinos: 'active',
             disponibilidad: 'active',
-            reportes: 'pending' // TODO: Cambiar a 'active' cuando se implemente
+            reportes: 'pending'
         }
+
     });
 });
 
@@ -122,12 +125,10 @@ app.use(`${API_PREFIX}/filtros`, filtrosRouter);
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// MÓDULO 4: REPORTES Y QUEJAS (PENDIENTE)
+// MÓDULO 4: REPORTES, QUEJAS Y MANTENIMIENTO (DESHABILITADO)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// TODO: Descomentar cuando se implemente el módulo de reportes
-// app.use(`${API_PREFIX}/reportes`, reportesRoutes);
-// app.use(`${API_PREFIX}/quejas`, quejasRoutes);
-// app.use(`${API_PREFIX}/mantenimiento`, mantenimientoRoutes);
+// app.use(`${API_PREFIX}/incidencias`, incidentRoutes);
+
 
 // ============================================
 // MANEJO DE RUTAS NO ENCONTRADAS
@@ -188,7 +189,7 @@ const startServer = () => {
 ║      • Disponibilidad y Búsqueda                          ║
 ║                                                            ║
 ║   ⏳ Módulos Pendientes:                                   ║
-║      • Reportes y Quejas                                  ║
+║      • Reportes (requiere reconstrucción)                 ║
 ║                                                            ║
 ╚════════════════════════════════════════════════════════════╝
       `);

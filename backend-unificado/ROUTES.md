@@ -72,6 +72,22 @@ Todas las rutas usan el prefijo: **`/api`**
 | GET | `/api/contratos/:id` | Obtener contrato por ID | ✅ |
 | GET | `/api/contratos/:id/descargar` | Descargar PDF del contrato | ✅ |
 
+### 🔧 Incidencias/Reportes (Módulo Reportes)
+
+| Método | Ruta | Descripción | Auth |
+|--------|------|-------------|------|
+| GET | `/api/incidencias` | Listar incidencias | ✅ |
+| POST | `/api/incidencias` | Crear incidencia (con archivos) | ✅ |
+| GET | `/api/incidencias/:id` | Obtener incidencia por ID | ✅ |
+| PATCH | `/api/incidencias/:id` | Actualizar incidencia | ✅ |
+| PATCH | `/api/incidencias/:id/status` | Actualizar estado de incidencia | ✅ |
+| DELETE | `/api/incidencias/:id` | Eliminar incidencia | ✅ |
+| GET | `/api/incidencias/:id/bitacora` | Obtener bitácora de incidencia | ✅ |
+| POST | `/api/incidencias/:id/comentarios` | Agregar comentario | ✅ |
+| GET | `/api/incidencias/:id/comentarios` | Listar comentarios | ✅ |
+| POST | `/api/incidencias/:id/adjuntos` | Subir adjunto | ✅ |
+| GET | `/api/incidencias/:id/adjuntos` | Listar adjuntos | ✅ |
+
 ---
 
 ## 🔧 Health Check
