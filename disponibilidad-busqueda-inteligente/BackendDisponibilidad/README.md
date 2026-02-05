@@ -1,38 +1,41 @@
 
+---
+
 # 🏠 Panel de Disponibilidad y Búsqueda Inteligente
 
-### Microservicio – Portoviejo 360
+### Microservicio — **Portoviejo 360**
 
-Este módulo forma parte del sistema **Portoviejo 360** y es responsable de la **gestión de propiedades inmobiliarias**, su **búsqueda mediante filtros inteligentes** y la **sincronización de cambios de estado en tiempo real**.
+Este microservicio forma parte del ecosistema **Portoviejo 360** y es responsable de la **gestión, consulta y filtrado de propiedades inmobiliarias**, así como de la **sincronización en tiempo real del estado de las propiedades** mediante **WebSockets**.
 
-El microservicio se conecta a la **base de datos general del proyecto (Supabase – PostgreSQL)** y **no maneja autenticación**, ya que consume datos compartidos del sistema principal.
+Se conecta directamente a la **base de datos central del proyecto (Supabase – PostgreSQL)** y **no implementa autenticación**, ya que consume información compartida del sistema principal.
 
 ---
 
-## 🎯 Objetivo
+## 🎯 Objetivo del Microservicio
 
 * Gestionar propiedades inmobiliarias.
-* Consultar y filtrar propiedades disponibles.
-* Emitir eventos en tiempo real cuando cambia el estado de una propiedad.
-* Mantener frontend y backend sincronizados sin recargar la interfaz.
+* Proveer consultas eficientes y filtros inteligentes.
+* Mantener sincronizado el estado de las propiedades en tiempo real.
+* Reducir recargas del frontend mediante eventos WebSocket.
 
 ---
 
-## 📌 Responsabilidades
+## 📌 Responsabilidades Principales
 
-* Registro y consulta de propiedades.
-* Filtros dinámicos por:
+* CRUD parcial de propiedades.
+* Consulta de propiedades disponibles.
+* Filtrado dinámico por:
 
-  * Estado (Disponible / Ocupado / Mantenimiento)
-  * Público objetivo (Estudiantes, Trabajadores, Todo público)
-  * Combinaciones de filtros.
-* Emisión de eventos WebSocket al cambiar el estado de una propiedad.
+  * Estado de la propiedad.
+  * Público objetivo.
+  * Rango de precios.
+* Emisión de eventos WebSocket cuando cambia el estado de una propiedad.
 
 ---
 
-## 🧱 Arquitectura
+## 🧱 Arquitectura General
 
-El microservicio sigue una **arquitectura por capas**, con integración en tiempo real:
+Arquitectura por capas con comunicación en tiempo real:
 
 ```
 Frontend (Next.js)
@@ -53,41 +56,41 @@ Base de Datos (Supabase - PostgreSQL)
 
 * Separación de responsabilidades
 * Bajo acoplamiento
-* Comunicación en tiempo real
+* Comunicación reactiva
 * Escalabilidad modular
 
 ---
 
-## 📁 Estructura del proyecto
+## 📁 Estructura del Proyecto
 
 ```
 src/
-├── config/              # Configuración de base de datos
-├── controllers/         # Endpoints HTTP
-├── services/            # Lógica de negocio
+├── config/                # Conexión a base de datos
+├── controllers/           # Controladores HTTP
+├── services/              # Lógica de negocio
+├── routers/               # Definición de rutas
 ├── modules/
-│   ├── propiedades/     # Dominio propiedades
-│   ├── filtros/         # Dominio filtros inteligentes
-│   └── websocket.ts     # Comunicación en tiempo real
-├── routers/             # Rutas
-├── middleware/          # Validaciones
-├── utils/               # Helpers y responses
-├── app.ts               # Configuración Express
-└── server.ts            # Arranque del servidor
+│   ├── propiedades/       # Dominio propiedades
+│   ├── filtros/           # Filtros inteligentes
+│   └── tiempo-real/       # WebSockets
+├── middleware/            # Validaciones
+├── utils/                 # Helpers y respuestas
+├── app.ts                 # Configuración Express
+└── server.ts              # Arranque dinámico del servidor
 ```
 
 ---
 
-## 🗄️ Base de Datos (Supabase)
+## 🗄️ Base de Datos (Supabase – PostgreSQL)
 
-Tablas utilizadas:
+### Tablas utilizadas
 
 * `propiedades`
 * `estados_propiedad`
 * `tipo_publico`
 * `usuarios` (solo referencia por `propietario_id`)
 
-Relaciones clave:
+### Relaciones clave
 
 * `propiedades.estado_id → estados_propiedad.id_estado`
 * `propiedades.publico_objetivo_id → tipo_publico.id_tipo`
@@ -95,17 +98,20 @@ Relaciones clave:
 
 ---
 
-## 🌐 Endpoints Principales
+## 🌐 Endpoints REST
 
-### Obtener propiedades disponibles
+### 1️⃣ Listar propiedades
 
 ```http
 GET /propiedades
 ```
 
+**Descripción**
+Devuelve todas las propiedades con su estado y público objetivo.
+
 ---
 
-### Crear una propiedad
+### 2️⃣ Crear propiedad
 
 ```http
 POST /propiedades
@@ -113,17 +119,22 @@ POST /propiedades
 
 ```json
 {
-  "propietario_id": "uuid-del-usuario",
+  "propietario_id": "uuid-usuario",
   "estado_id": 1,
   "publico_objetivo_id": 1,
   "titulo_anuncio": "Suite Norte",
-  "precio_mensual": 400
+  "descripcion": "Cómoda suite amoblada",
+  "precio_mensual": 400,
+  "direccion_texto": "Av. Manabí",
+  "latitud_mapa": -0.9536,
+  "longitud_mapa": -80.7371,
+  "es_amoblado": true
 }
 ```
 
 ---
 
-### Cambiar estado de una propiedad
+### 3️⃣ Cambiar estado de una propiedad (TIEMPO REAL)
 
 ```http
 PUT /propiedades/:id/estado
@@ -135,29 +146,50 @@ PUT /propiedades/:id/estado
 }
 ```
 
-📌 Este cambio **dispara un evento WebSocket**.
+📡 **Este endpoint emite un evento WebSocket** a todos los clientes conectados.
+
+---
+
+### 4️⃣ Editar una propiedad completa
+
+```http
+PUT /propiedades/:id
+```
+
+Actualiza únicamente los campos enviados (edición parcial tipo Amazon).
+
+---
+
+### 5️⃣ Obtener datos relacionados por ID
+
+```http
+GET /propiedades/:id/servicios
+GET /propiedades/:id/fotos
+GET /propiedades/:id/propietario
+GET /propiedades/:id/perfil-verificado
+```
 
 ---
 
 ## 🔍 Filtros Inteligentes
 
 ```http
-GET /filtros/propiedades?estado=Disponible
-GET /filtros/propiedades?publico_objetivo_id=2
-GET /filtros/propiedades?estado=Disponible&publico_objetivo_id=3
+GET /filtros/propiedades?estado=DISPONIBLE
+GET /filtros/propiedades?precio_min=300&precio_max=500
+GET /filtros/propiedades?estado=DISPONIBLE&publico_objetivo_id=2
 ```
 
-Si no existen coincidencias, el endpoint devuelve:
+### Comportamiento
 
-```json
-[]
-```
+* Los filtros se traducen a SQL dinámico.
+* Si no hay coincidencias → devuelve `[]`.
+* No genera errores innecesarios.
 
 ---
 
 ## 🔴 Comunicación en Tiempo Real (WebSocket)
 
-Cuando el estado de una propiedad cambia, el backend emite:
+### Evento emitido
 
 ```json
 {
@@ -170,60 +202,66 @@ Cuando el estado de una propiedad cambia, el backend emite:
 }
 ```
 
-El frontend:
+### Comportamiento en frontend
 
 * Escucha el evento.
 * Actualiza el estado global.
-* Refresca la UI sin recargar la página.
+* Refresca UI y mapa sin recargar la página.
 
 ---
 
 ## 🧪 Pruebas Realizadas
 
-* Pruebas manuales de endpoints REST con **Postman**.
-* Verificación de eventos WebSocket mediante logs del backend.
-* Confirmación de recepción de eventos en consola del frontend.
-* Validación visual del cambio de estado en la interfaz.
+* Endpoints REST probados con **Postman**.
+* WebSocket validado mediante logs.
+* Confirmación de actualización visual en frontend.
+* Verificación de filtros combinados.
 
 ---
 
 ## 🚀 Ejecución Local
 
-Variables de entorno:
+### Variables de entorno
 
 ```env
 PORT=3000
 DATABASE_URL=postgresql://usuario:password@host:puerto/database
 ```
 
-Ejecución:
+### Arranque dinámico de puerto
 
-* Backend: `http://localhost:3000`
+El backend **inicia automáticamente en el primer puerto disponible**, comenzando desde el definido en `PORT`.
+
+---
+
+## 📍 URLs locales
+
+* Backend: `http://localhost:<puerto>`
 * Frontend: `http://localhost:3001`
 
 ---
 
-## ✅ Estado Actual del Módulo
+## ✅ Estado Actual
 
 ✔ Backend funcional
 ✔ Conectado a Supabase
-✔ Endpoints REST operativos
-✔ WebSocket implementado y validado
-✔ Frontend conectado en tiempo real
-✔ Arquitectura limpia y desacoplada
+✔ Endpoints REST completos
+✔ WebSocket operativo
+✔ Frontend sincronizado en tiempo real
+✔ Arquitectura limpia y escalable
 
 ---
 
-## 🧭 Próximos Pasos (no implementados aún)
+## 🧭 Próximos Pasos
 
-* Consumo de datos reales en frontend (reemplazar mocks).
-* Actualización visual completa del mapa en tiempo real.
+* Filtros por cercanía geográfica.
 * Autenticación y roles.
-* Persistencia de favoritos por usuario.
+* Persistencia de favoritos.
+* Optimización de consultas espaciales.
 
 ---
 
 ## 👨‍💻 Autor
 
-Proyecto académico – **Portoviejo 360**
+Proyecto académico — **Portoviejo 360**
 Microservicio: **Panel de Disponibilidad y Búsqueda Inteligente**

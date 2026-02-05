@@ -6,10 +6,14 @@ export const generarContrato = async (reservaId: string, usuarioId: string) => {
     const reserva = await prisma.reserva.findUnique({
         where: { id: reservaId },
         include: {
-            usuario: true,
+            usuario: {
+                include: { perfilVerificado: true }
+            },
             propiedad: {
                 include: {
-                    propietario: true
+                    propietario: {
+                        include: { perfilVerificado: true }
+                    }
                 }
             },
             contrato: true
@@ -30,33 +34,52 @@ export const generarContrato = async (reservaId: string, usuarioId: string) => {
         }
     }
 
-    // Return existing if already exists
-    if (reserva.contrato) {
-        return reserva.contrato;
-    }
+    // 2. Generate PDF (ALWAYS regenerate to ensure latest template)
+    // if (reserva.contrato) {
+    //    return reserva.contrato;
+    // }
 
     // 2. Generate PDF
-    // Mocking names if some are missing or using DB data
     const pdfPath = await generateContractPDF({
-        arrendador: reserva.propiedad.propietario.nombresCompletos,
-        arrendatario: reserva.usuario.nombresCompletos,
-        propiedad: reserva.propiedad.tituloAnuncio,
+        arrendador: {
+            nombre: reserva.propiedad.propietario.nombresCompletos,
+            cedula: reserva.propiedad.propietario.perfilVerificado?.cedulaRuc || 'N/A'
+        },
+        arrendatario: {
+            nombre: reserva.usuario.nombresCompletos,
+            cedula: reserva.usuario.perfilVerificado?.cedulaRuc || 'N/A'
+        },
+        propiedad: {
+            direccion: reserva.propiedad.direccionTexto || 'Dirección no registrada',
+            descripcion: reserva.propiedad.descripcion || 'Sin descripción',
+            precio: Number(reserva.totalPagar) // Using total as monthly for now, logic might need adjustment if total is for full stay
+        },
         fechaInicio: reserva.fechaEntrada,
-        fechaFin: reserva.fechaSalida,
-        monto: Number(reserva.totalPagar)
+        fechaFin: reserva.fechaSalida
     });
 
     // 3. Save to DB
     // In a real app, upload pdfPath to S3/Supabase Storage and save URL.
     // Here we save the local path or a relative URL.
+    // 3. Save or Update DB
     const relativeUrl = `/uploads/${pdfPath.split(/[\\/]/).pop()}`;
 
-    const contrato = await prisma.contrato.create({
-        data: {
-            reservaId: reserva.id,
-            urlArchivo: relativeUrl
-        }
-    });
+    let contrato;
+    if (reserva.contrato) {
+        // Update existing record
+        contrato = await prisma.contrato.update({
+            where: { id: reserva.contrato.id },
+            data: { urlArchivo: relativeUrl }
+        });
+    } else {
+        // Create new
+        contrato = await prisma.contrato.create({
+            data: {
+                reservaId: reserva.id,
+                urlArchivo: relativeUrl
+            }
+        });
+    }
 
     return contrato;
 };

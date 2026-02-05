@@ -1,15 +1,14 @@
-import http from "node:http";
-import app from "./app";
-import { initSocket } from "./modules/tiempo-real/panel.gateway";
+import app from './app';
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8004;
 
-// crear servidor HTTP con app ya configurada
-const server = http.createServer(app);
-
-// inicializar websocket
-initSocket(server);
-
-server.listen(PORT, () => {
-  console.log(`Backend running on port ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`🚀 Módulo Disponibilidad ejecutándose en puerto ${PORT}`);
+  console.log(`📍 Endpoints disponibles:`);
+  console.log(`   GET  /propiedades`);
+  console.log(`   GET  /propiedades/:id`);
+  console.log(`   POST /propiedades`);
+  console.log(`   PUT  /propiedades/:id`);
+  console.log(`   PUT  /propiedades/:id/estado`);
+  console.log(`   GET  /filtros/propiedades`);
 });
