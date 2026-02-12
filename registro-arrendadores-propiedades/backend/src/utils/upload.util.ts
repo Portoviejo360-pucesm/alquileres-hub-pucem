@@ -64,11 +64,12 @@ export const uploadPropertyPhoto = async (
         const fileExtension = fileName.split('.').pop();
         const uniqueFileName = `propiedad-${propiedadId}/${uuidv4()}.${fileExtension}`;
 
-        // Subir archivo a Supabase Storage
+        // Subir archivo a Supabase Storage con configuración pública
         const { data, error } = await supabase.storage
             .from(PROPERTY_PHOTOS_BUCKET)
             .upload(uniqueFileName, file, {
                 contentType: getContentType(fileExtension || ''),
+                cacheControl: '3600',
                 upsert: false
             });
 

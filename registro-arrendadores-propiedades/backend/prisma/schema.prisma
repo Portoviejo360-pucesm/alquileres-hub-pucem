@@ -29,16 +29,26 @@ model Rol {
   @@map("roles")
 }
 
+enum EstadoVerificacion {
+  NO_SOLICITADO
+  PENDIENTE
+  VERIFICADO
+  RECHAZADO
+}
+
 model PerfilVerificado {
-  id               Int       @id @default(autoincrement()) @map("id_verificacion")
-  usuarioId        String    @unique @map("usuario_id") @db.Uuid
-  cedulaRuc        String    @unique @map("cedula_ruc") @db.VarChar(13)
-  fotoDocumentoUrl String?   @map("foto_documento_url")
-  telefonoContacto String    @map("telefono_contacto") @db.VarChar(20)
-  biografiaCorta   String?   @map("biografia_corta")
-  estaVerificado   Boolean?  @default(false) @map("esta_verificado")
-  fechaSolicitud   DateTime? @default(now()) @map("fecha_solicitud") @db.Timestamp(6)
-  usuario          Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                 Int                @id @default(autoincrement()) @map("id_verificacion")
+  usuarioId          String             @unique @map("usuario_id") @db.Uuid
+  cedulaRuc          String             @unique @map("cedula_ruc") @db.VarChar(13)
+  fotoDocumentoUrl   String?            @map("foto_documento_url")
+  telefonoContacto   String             @map("telefono_contacto") @db.VarChar(20)
+  biografiaCorta     String?            @map("biografia_corta")
+  estaVerificado     Boolean?           @default(false) @map("esta_verificado")
+  fechaSolicitud     DateTime?          @default(now()) @map("fecha_solicitud") @db.Timestamp(6)
+  estadoVerificacion EstadoVerificacion @default(NO_SOLICITADO) @map("estado_verificacion")
+  fechaVerificacion  DateTime?          @map("fecha_verificacion") @db.Timestamp(6)
+  notasVerificacion  String?            @map("notas_verificacion")
+  usuario            Usuario            @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("perfil_verificado")
 }

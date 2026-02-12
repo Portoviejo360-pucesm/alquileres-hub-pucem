@@ -113,20 +113,64 @@ export class PerfilService {
     }
 
     /**
-     * Actualizar perfil verificado
+     * Actualizar perfil verificado (o crear si no existe)
      */
     static async actualizarPerfil(
         usuarioId: string,
         data: Partial<SolicitarVerificacionInput>
     ) {
-        // Verificar que el perfil existe
-        const perfilExistente = await prisma.perfilVerificado.findUnique({
-            where: { usuarioId }
+        // Verificar que el usuario existe
+        const usuario = await prisma.usuario.findUnique({
+            where: { id: usuarioId },
+            include: {
+                perfilVerificado: true
+            }
         });
 
-        if (!perfilExistente) {
-            throw new AppError('No tienes un perfil de arrendador', 404);
+        if (!usuario) {
+            throw new AppError('Usuario no encontrado', 404);
         }
+
+        // Si no tiene perfil, crear uno nuevo
+        if (!usuario.perfilVerificado) {
+            // Validar que se proporcionen los campos requeridos
+            if (!data.cedulaRuc || !data.telefonoContacto) {
+                throw new AppError(
+                    'Debes proporcionar cédula/RUC y teléfono de contacto',
+                    400
+                );
+            }
+
+            // Verificar que la cédula no esté ya registrada
+            const cedulaExistente = await prisma.perfilVerificado.findUnique({
+                where: { cedulaRuc: data.cedulaRuc }
+            });
+
+            if (cedulaExistente) {
+                throw new AppError('Esta cédula/RUC ya está registrada', 409);
+            }
+
+            // Crear nuevo perfil
+            const nuevoPerfil = await prisma.perfilVerificado.create({
+                data: {
+                    usuarioId,
+                    cedulaRuc: data.cedulaRuc,
+                    telefonoContacto: data.telefonoContacto,
+                    biografiaCorta: data.biografiaCorta,
+                    fotoDocumentoUrl: data.fotoDocumentoUrl,
+                    estaVerificado: false,
+                    estadoVerificacion: 'NO_SOLICITADO'
+                }
+            });
+
+            return {
+                message: 'Perfil de arrendador creado exitosamente',
+                perfil: nuevoPerfil
+            };
+        }
+
+        // Si ya tiene perfil, actualizarlo
+        const perfilExistente = usuario.perfilVerificado;
 
         // Si está verificado, solo permitir actualizar biografía y teléfono
         if (perfilExistente.estaVerificado && data.cedulaRuc) {
@@ -136,13 +180,24 @@ export class PerfilService {
             );
         }
 
+        // Si quiere cambiar la cédula y no está verificado, verificar que no esté duplicada
+        if (data.cedulaRuc && data.cedulaRuc !== perfilExistente.cedulaRuc) {
+            const cedulaExistente = await prisma.perfilVerificado.findUnique({
+                where: { cedulaRuc: data.cedulaRuc }
+            });
+
+            if (cedulaExistente) {
+                throw new AppError('Esta cédula/RUC ya está registrada', 409);
+            }
+        }
+
         // Actualizar perfil
         const perfilActualizado = await prisma.perfilVerificado.update({
             where: { usuarioId },
             data: {
                 ...(data.telefonoContacto && { telefonoContacto: data.telefonoContacto }),
-                ...(data.biografiaCorta && { biografiaCorta: data.biografiaCorta }),
-                ...(data.fotoDocumentoUrl && { fotoDocumentoUrl: data.fotoDocumentoUrl }),
+                ...(data.biografiaCorta !== undefined && { biografiaCorta: data.biografiaCorta }),
+                ...(data.fotoDocumentoUrl !== undefined && { fotoDocumentoUrl: data.fotoDocumentoUrl }),
                 ...(!perfilExistente.estaVerificado && data.cedulaRuc && { cedulaRuc: data.cedulaRuc })
             }
         });

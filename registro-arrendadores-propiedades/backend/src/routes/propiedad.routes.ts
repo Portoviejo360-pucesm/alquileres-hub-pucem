@@ -8,6 +8,22 @@ import { crearPropiedadSchema, actualizarPropiedadSchema } from '../validators/p
 const router = Router();
 
 // ============================================
+// RUTAS PROTEGIDAS (requieren autenticación Y verificación)
+// ============================================
+
+/**
+ * @route   GET /api/propiedades/mis-propiedades
+ * @desc    Obtener propiedades del usuario autenticado
+ * @access  Private (requiere verificación)
+ */
+router.get(
+    '/mis-propiedades',
+    authenticate,
+    requireVerification,
+    PropiedadController.obtenerMisPropiedades
+);
+
+// ============================================
 // RUTAS PÚBLICAS (sin autenticación)
 // ============================================
 
@@ -30,22 +46,6 @@ router.get(
 router.get(
     '/:id',
     PropiedadController.obtenerPropiedadPorId
-);
-
-// ============================================
-// RUTAS PROTEGIDAS (requieren autenticación Y verificación)
-// ============================================
-
-/**
- * @route   GET /api/propiedades/mis-propiedades
- * @desc    Obtener propiedades del usuario autenticado
- * @access  Private (requiere verificación)
- */
-router.get(
-    '/mis-propiedades',
-    authenticate,
-    requireVerification,
-    PropiedadController.obtenerMisPropiedades
 );
 
 /**

@@ -58,12 +58,21 @@ app.get('/health', (_req: Request, res: Response) => {
 // RUTAS DE LA API
 // ============================================
 
+import uploadRoutes from './routes/upload.routes';
+import path from 'path';
+
+// ...
+
+// Servir archivos estáticos
+app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
+
 const API_PREFIX = '/api/v1';
 
 app.use(`${API_PREFIX}/auth`, authRoutes);
 app.use(`${API_PREFIX}/perfil`, perfilRoutes);
 app.use(`${API_PREFIX}/propiedades`, propiedadRoutes);
 app.use(`${API_PREFIX}/catalogos`, catalogoRoutes);
+app.use(`${API_PREFIX}/uploads`, uploadRoutes);
 
 // ============================================
 // MANEJO DE RUTAS NO ENCONTRADAS
