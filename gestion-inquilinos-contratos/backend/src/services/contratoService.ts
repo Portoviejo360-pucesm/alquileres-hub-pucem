@@ -52,7 +52,8 @@ export const generarContrato = async (reservaId: string, usuarioId: string) => {
         propiedad: {
             direccion: reserva.propiedad.direccionTexto || 'Dirección no registrada',
             descripcion: reserva.propiedad.descripcion || 'Sin descripción',
-            precio: Number(reserva.totalPagar) // Using total as monthly for now, logic might need adjustment if total is for full stay
+            precioMensual: Number(reserva.propiedad.precioMensual), // Correct Monthly Price
+            precioTotal: Number(reserva.totalPagar) // Correct Total Reservation Price
         },
         fechaInicio: reserva.fechaEntrada,
         fechaFin: reserva.fechaSalida

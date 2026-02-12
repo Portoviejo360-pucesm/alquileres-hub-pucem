@@ -44,6 +44,10 @@ export const createReserva = async (data: { usuarioId: string, propiedadId: numb
     const dailyRate = Number(propiedad.precioMensual) / 30;
     const totalPagar = dailyRate * diffDays;
 
+    if (diffDays < 30) {
+        throw new Error('La estancia mínima es de 30 días.');
+    }
+
     if (diffDays <= 0) {
         throw new Error('Fechas inválidas.');
     }
@@ -56,7 +60,7 @@ export const createReserva = async (data: { usuarioId: string, propiedadId: numb
             fechaEntrada,
             fechaSalida,
             totalPagar: totalPagar,
-            estado: 'PENDIENTE' // Or CONFIRMADA directly if payment is simulated immediately
+            estado: 'CONFIRMADA' // Auto-confirm for academic purposes
         }
     });
 

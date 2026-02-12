@@ -14,7 +14,8 @@ export interface ContractData {
     propiedad: {
         direccion: string;
         descripcion: string;
-        precio: number;
+        precioMensual: number;
+        precioTotal: number;
     };
     fechaInicio: Date;
     fechaFin: Date;
@@ -31,21 +32,23 @@ const numeroALetras = (num: number): string => {
     const entero = Math.floor(num);
     const decimal = Math.round((num - entero) * 100);
 
-    if (entero === 0) return 'CERO';
-    if (entero >= 1000000) return 'NUMERO DEMASIADO GRANDE'; // Simplified for this context
+    // Helper function to convert number to words (reusable for integer and decimals)
+    function convertirNumero(n: number): string {
+        if (n === 0) return 'CERO';
 
-    let letras = '';
+        let letras = '';
+        const miles = Math.floor(n / 1000);
+        const resto = n % 1000;
 
-    const miles = Math.floor(entero / 1000);
-    const resto = entero % 1000;
+        if (miles > 0) {
+            if (miles === 1) letras += 'MIL ';
+            else letras += convertGroup(miles) + ' MIL ';
+        }
 
-    if (miles > 0) {
-        if (miles === 1) letras += 'MIL ';
-        else letras += convertGroup(miles) + ' MIL ';
-    }
-
-    if (resto > 0 || miles === 0) {
-        letras += convertGroup(resto);
+        if (resto > 0 || miles === 0) {
+            letras += convertGroup(resto);
+        }
+        return letras.trim();
     }
 
     function convertGroup(n: number): string {
@@ -70,7 +73,10 @@ const numeroALetras = (num: number): string => {
         return output.trim();
     }
 
-    return `${letras.toUpperCase()} CON ${decimal}/100`;
+    const parteEntera = convertirNumero(entero);
+    const parteDecimal = convertirNumero(decimal);
+
+    return `${parteEntera.toUpperCase()} DÓLARES CON ${parteDecimal.toUpperCase()} CENTAVOS DE LOS ESTADOS UNIDOS DE AMÉRICA`;
 };
 
 export const generateContractPDF = (data: ContractData): Promise<string> => {
@@ -137,8 +143,15 @@ export const generateContractPDF = (data: ContractData): Promise<string> => {
                 'PROVINCIA': 'Manabí',
                 'NUMERO_DE_METROS': 'N/A', // Not in DB
                 'DESCRIPCION': data.propiedad.descripcion,
-                'VALOR_ARRIENDO_EN PALABRAS': numeroALetras(data.propiedad.precio),
-                'VALOR_DE_ARRIENDO_EN_NUMEROS': data.propiedad.precio.toFixed(2),
+
+                // Monthly Rent
+                'VALOR_ARRIENDO_EN PALABRAS': numeroALetras(data.propiedad.precioMensual),
+                'VALOR_DE_ARRIENDO_EN_NUMEROS': data.propiedad.precioMensual.toFixed(2),
+
+                // Total Contract Value
+                'VALOR_TOTAL_EN_PALABRAS': numeroALetras(data.propiedad.precioTotal),
+                'VALOR_TOTAL_EN_NUMEROS': data.propiedad.precioTotal.toFixed(2),
+
                 'NUMERO_CUENTA': 'XXXXXXXXXX',
                 'NOMBRE_BANCO': 'BANCO GENÉRICO',
                 'DURACION_TEXTO': duracionDias < 30
@@ -146,9 +159,11 @@ export const generateContractPDF = (data: ContractData): Promise<string> => {
                     : (duracionAnios > 0
                         ? `${duracionAnios} año${duracionAnios > 1 ? 's' : ''}${duracionMeses > 0 ? ` y ${duracionMeses} mes${duracionMeses > 1 ? 'es' : ''}` : ''}`
                         : `${duracionMeses} mes${duracionMeses > 1 ? 'es' : ''}`),
-                // Fix for typo in markdown template (VALOS instead of VALOR)
-                'VALOS_MONETARIO_DE_GARANTIA_EN PALABRAS': numeroALetras(data.propiedad.precio),
-                'VALOS_MONETARIO_DE_GARANTIA_EN_NUMEROS': data.propiedad.precio.toFixed(2),
+
+                // Using Total Value for Warranty usually, or equivalent to 1 month? 
+                // Let's use Monthly Price for Warranty as is standard
+                'VALOS_MONETARIO_DE_GARANTIA_EN PALABRAS': numeroALetras(data.propiedad.precioMensual),
+                'VALOS_MONETARIO_DE_GARANTIA_EN_NUMEROS': data.propiedad.precioMensual.toFixed(2),
                 'NUMERO_DE_CEDULA': data.arrendador.cedula,
                 'NUMERO_CED': data.arrendatario.cedula,
                 'TRIM_NOMBRE_ARRENDADOR': data.arrendador.nombre,
@@ -272,11 +287,11 @@ export const generateContractPDF = (data: ContractData): Promise<string> => {
 
             // Draw Signatures Manually
 
-            if (doc.y > 600) {
+            if (doc.y > 550) { // Check if enough space remains
                 doc.addPage();
-                doc.on('pageAdded', () => drawHeader()); // Ensure header is on new page too if needed logic
+                doc.on('pageAdded', () => drawHeader());
             } else {
-                doc.moveDown(4); // Add spacing before signatures
+                doc.moveDown(6); // Increased spacing before signatures
             }
 
             const startSignatureY = doc.y;
@@ -288,7 +303,7 @@ export const generateContractPDF = (data: ContractData): Promise<string> => {
             doc.moveTo(leftColX, startSignatureY).lineTo(leftColX + colWidth, startSignatureY).stroke();
             doc.moveTo(rightColX, startSignatureY).lineTo(rightColX + colWidth, startSignatureY).stroke();
 
-            let currentTextY = startSignatureY + 15; // Start text slightly below line
+            let currentTextY = startSignatureY + 25; // Increased spacing (was 15) below line
 
             // Header
             doc.font('Helvetica-Bold');

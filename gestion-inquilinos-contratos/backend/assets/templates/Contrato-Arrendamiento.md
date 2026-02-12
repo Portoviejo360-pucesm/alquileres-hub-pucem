@@ -10,7 +10,7 @@ En la ciudad de CIUDAD, hoy DIAS de MES del año ANIO, comparecen para celebrar 
 **TERCERA: - Uso del inmueble -** El Arrendatario declara haber recibido el inmueble en perfectas condiciones y se compromete a destinarlo exclusivamente para vivienda.
 
 **CUARTA: - Canon de arrendamiento y forma de pago -** Las partes acuerdan que el canon mensual de arrendamiento será:
-- **VALOR_ARRIENDO_EN PALABRAS DÓLARES DE LOS ESTADOS UNIDOS DE AMÉRICA** (USD $VALOR_DE_ARRIENDO_EN_NUMEROS).
+- **VALOR_ARRIENDO_EN PALABRAS** (USD $VALOR_DE_ARRIENDO_EN_NUMEROS).
 
 El pago deberá efectuarse por adelantado dentro de los cinco primeros días de cada mes, mediante:
 - Pago en efectivo, con recibo emitido por el Arrendador.
@@ -26,7 +26,7 @@ El pago deberá efectuarse por adelantado dentro de los cinco primeros días de 
 
 **NOVENA: - Prohibiciones -** El Arrendatario no podrá subarrendar ni ceder el inmueble sin autorización escrita del Arrendador. Asimismo, queda prohibido destinar el local a un uso distinto del establecido en la cláusula TERCERA.
 
-**DÉCIMA: - Garantía -** El Arrendatario entrega la suma de **VALOS_MONETARIO_DE_GARANTIA_EN PALABRAS DÓLARES DE LOS ESTADOS UNIDOS DE AMÉRICA** (USD $VALOS_MONETARIO_DE_GARANTIA_EN_NUMEROS) en calidad de garantía por el buen uso y mantenimiento del inmueble. Dicho valor será reembolsado al finalizar el contrato, siempre que:
+**DÉCIMA: - Garantía -** El Arrendatario entrega la suma de **VALOS_MONETARIO_DE_GARANTIA_EN PALABRAS** (USD $VALOS_MONETARIO_DE_GARANTIA_EN_NUMEROS) en calidad de garantía por el buen uso y mantenimiento del inmueble. Dicho valor será reembolsado al finalizar el contrato, siempre que:
 - Se devuelva el inmueble en las mismas condiciones en que fue recibido.
 - Se entreguen las facturas de servicios básicos pagadas.
 - No existan daños pendientes de reparación.
