@@ -7,6 +7,7 @@ import { AppError } from './utils/errors';
 
 // Routes import
 import incidentRoutes from './routes/incident.routes';
+import catalogRoutes from './routes/catalog.routes';
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/incidents', incidentRoutes);
+app.use('/api/catalogos', catalogRoutes);
 
 // 404 Handler
 app.use((req, res) => {

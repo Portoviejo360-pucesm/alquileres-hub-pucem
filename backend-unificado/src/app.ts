@@ -28,9 +28,17 @@ import { propiedadesRouter as propiedadesDisponibilidadRouter } from '../../disp
 import { filtrosRouter } from '../../disponibilidad-busqueda-inteligente/BackendDisponibilidad/src/routers/filtros.routes';
 
 // Módulo 4: Reportes, Quejas y Mantenimiento (Puerto 8003)
-// DESHABILITADO: Prisma Client tiene rutas hardcodeadas de macOS en node_modules
-// El módulo debe ser reconstruido en la máquina original (macOS) o en un ambiente limpio
-// import incidentRoutes from '../../reportes-quejas-mantenimiento/backend/src/routes/incident.routes';
+import incidentRoutes from '../../reportes-quejas-mantenimiento/backend/src/routes/incident.routes';
+import incidentCatalogRoutes from '../../reportes-quejas-mantenimiento/backend/src/routes/catalog.routes';
+
+
+// ============================================
+// CONFIGURACIÓN DE LA APLICACIÓN
+// ============================================
+
+// ... (existing code)
+
+
 
 
 // ============================================
@@ -127,7 +135,14 @@ app.use(`${API_PREFIX}/filtros`, filtrosRouter);
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // MÓDULO 4: REPORTES, QUEJAS Y MANTENIMIENTO (DESHABILITADO)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// app.use(`${API_PREFIX}/incidencias`, incidentRoutes);
+app.use(`${API_PREFIX}/incidents`, (req, res, next) => {
+    console.log('➡️ DEBUG: Petición entrante a /incidents');
+    console.log('➡️ Headers:', req.headers.authorization);
+    next();
+}, incidentRoutes);
+
+app.use(`${API_PREFIX}/catalogos-mantenimiento`, incidentCatalogRoutes);
+
 
 
 // ============================================

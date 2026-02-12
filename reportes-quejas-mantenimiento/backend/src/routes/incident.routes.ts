@@ -22,6 +22,9 @@ router.post(
     IncidentController.create
 );
 
+// Get user properties with active contracts
+router.get('/user-properties', IncidentController.getUserProperties);
+
 // List Incidents
 router.get('/', IncidentController.list);
 

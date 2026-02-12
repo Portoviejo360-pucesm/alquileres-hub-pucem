@@ -24,6 +24,10 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
     const token = authHeader.split(' ')[1];
 
+    console.log('🔐 Debug Auth Middleware:');
+    console.log('Token recibido:', token.substring(0, 20) + '...');
+    console.log('Secret usado para verificar:', config.jwtSecret ? config.jwtSecret.substring(0, 15) + '...' : 'UNDEFINED');
+
     try {
         // Validate JWT token (issued by external auth module)
         const decoded = jwt.verify(token, config.jwtSecret) as any;
@@ -39,6 +43,8 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
         next();
     } catch (error: any) {
+        console.error('❌ JWT Verification Error:', error.message);
+
         if (error.name === 'TokenExpiredError') {
             return res.status(401).json({
                 status: 'error',

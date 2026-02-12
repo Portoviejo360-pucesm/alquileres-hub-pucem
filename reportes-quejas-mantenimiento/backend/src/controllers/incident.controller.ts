@@ -2,12 +2,13 @@ import { Response, NextFunction } from 'express';
 import { IncidentService } from '../services/incident.service';
 import { AuthRequest } from '../types';
 import { BadRequestError } from '../utils/errors';
+import { prisma } from '../config';
 
 export class IncidentController {
     static async create(req: AuthRequest, res: Response, next: NextFunction) {
         try {
             const { user } = req;
-            
+
             // Parse body data (comes as form-data when files are included)
             const data = {
                 titulo: req.body.titulo,
@@ -153,6 +154,44 @@ export class IncidentController {
             res.json({
                 status: 'success',
                 message: result.message
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Get properties where user has active contracts (for incident creation)
+     */
+    static async getUserProperties(req: AuthRequest, res: Response, next: NextFunction) {
+        try {
+            const { user } = req;
+
+            // Get properties with active reservations for this user
+            const reservas = await prisma.reserva.findMany({
+                where: {
+                    usuario_id: user!.id,
+                    estado: 'CONFIRMADA',
+                    // fecha_entrada: { lte: new Date() }, // Allow future reservations
+                    fecha_salida: { gte: new Date() },
+                },
+                include: {
+                    propiedad: {
+                        select: {
+                            id_propiedad: true,
+                            titulo_anuncio: true,
+                            direccion_texto: true,
+                            precio_mensual: true,
+                        }
+                    }
+                }
+            });
+
+            const propiedades = reservas.map((r: any) => r.propiedad);
+
+            res.json({
+                status: 'success',
+                data: propiedades
             });
         } catch (error) {
             next(error);

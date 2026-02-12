@@ -15,6 +15,8 @@ interface JwtPayload {
  */
 export const generateToken = (payload: JwtPayload): string => {
     const secret = process.env.JWT_SECRET;
+    console.log('🖊️ Debug JWT Signing:');
+    console.log('Secret usado para firmar:', secret ? secret.substring(0, 15) + '...' : 'UNDEFINED');
     const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
 
     if (!secret) {

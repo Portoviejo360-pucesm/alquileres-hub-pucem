@@ -94,10 +94,10 @@ export class IncidentService {
         }
 
         // 6. Create History Log (RF-002 RN2)
-        const descripcionHistorial = files && files.length > 0 
+        const descripcionHistorial = files && files.length > 0
             ? `Incidencia reportada con ${files.length} archivo(s) adjunto(s)`
             : 'Incidencia reportada';
-            
+
         await prisma.historialIncidencia.create({
             data: {
                 incidencia_id: incidencia.id,
@@ -451,7 +451,7 @@ export class IncidentService {
                 usuario_id: userId,
                 propiedad_id: propiedadId,
                 estado: 'CONFIRMADA',
-                fecha_entrada: { lte: new Date() },
+                // fecha_entrada: { lte: new Date() }, // Allow future reservations
                 fecha_salida: { gte: new Date() },
             }
         });
