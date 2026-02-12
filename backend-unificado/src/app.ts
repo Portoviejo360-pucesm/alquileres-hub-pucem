@@ -7,7 +7,7 @@ import compression from 'compression';
 import dotenv from 'dotenv';
 
 // Cargar variables de entorno
-dotenv.config();
+dotenv.config({ override: true });
 
 // ============================================
 // IMPORTAR RUTAS DE CADA MÓDULO
