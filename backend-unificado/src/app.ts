@@ -18,6 +18,8 @@ import authRoutes from '../../registro-arrendadores-propiedades/backend/src/rout
 import perfilRoutes from '../../registro-arrendadores-propiedades/backend/src/routes/perfil.routes';
 import propiedadRegistroRoutes from '../../registro-arrendadores-propiedades/backend/src/routes/propiedad.routes';
 import catalogoRoutes from '../../registro-arrendadores-propiedades/backend/src/routes/catalogo.routes';
+import verificacionRoutes from '../../registro-arrendadores-propiedades/backend/src/routes/verificacion.routes';
+import adminVerificacionRoutes from '../../registro-arrendadores-propiedades/backend/src/routes/admin-verificacion.routes';
 
 // Módulo 2: Gestión de Inquilinos y Contratos (Puerto 8002)
 import reservaRoutes from '../../gestion-inquilinos-contratos/backend/src/routes/reservaRoutes';
@@ -62,7 +64,7 @@ app.use(cors({
     origin: process.env.CORS_ORIGIN || process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id']
 }));
 
 // Logging - Siempre en modo dev para ver las peticiones
@@ -107,8 +109,17 @@ app.get('/', (_req: Request, res: Response) => {
 // RUTAS DE LA API - MÓDULOS UNIFICADOS
 // ============================================
 
-const API_PREFIX = '/api';
+const API_PREFIX = '/api/v1';
 
+
+import uploadRoutes from '../../registro-arrendadores-propiedades/backend/src/routes/upload.routes';
+import path from 'path';
+
+// ... (existing code)
+
+// Servir archivos estáticos (uploads)
+// Asegurarse de que el directorio exista en backend-unificado o ajustar path
+app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // MÓDULO 1: REGISTRO DE ARRENDADORES Y PROPIEDADES
@@ -117,6 +128,9 @@ app.use(`${API_PREFIX}/auth`, authRoutes);
 app.use(`${API_PREFIX}/perfil`, perfilRoutes);
 app.use(`${API_PREFIX}/propiedades/registro`, propiedadRegistroRoutes);
 app.use(`${API_PREFIX}/catalogos`, catalogoRoutes);
+app.use(`${API_PREFIX}/uploads`, uploadRoutes);
+app.use(`${API_PREFIX}/verificacion`, verificacionRoutes);
+app.use(`${API_PREFIX}/admin/verificaciones`, adminVerificacionRoutes);
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // MÓDULO 2: GESTIÓN DE INQUILINOS Y CONTRATOS
