@@ -36,6 +36,18 @@ router.get(
 );
 
 /**
+ * @route   GET /api/v1/admin/verificaciones/dashboard-stats
+ * @desc    Obtener estadísticas para el dashboard
+ * @access  Private (Solo Admin)
+ */
+router.get(
+    '/dashboard-stats',
+    authenticate,
+    requireAdmin,
+    AdminVerificacionController.obtenerDashboardStats
+);
+
+/**
  * @route   GET /api/v1/admin/verificaciones/:id
  * @desc    Obtener detalles de una solicitud de verificación
  * @access  Private (Solo Admin)

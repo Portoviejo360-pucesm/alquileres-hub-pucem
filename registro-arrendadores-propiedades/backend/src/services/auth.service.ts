@@ -85,7 +85,11 @@ export class AuthService {
                 },
                 perfilVerificado: {
                     select: {
-                        estaVerificado: true
+                        estaVerificado: true,
+                        estadoVerificacion: true,
+                        notasVerificacion: true,
+                        cedulaRuc: true,
+                        telefonoContacto: true
                     }
                 }
             }
@@ -145,7 +149,10 @@ export class AuthService {
                         telefonoContacto: true,
                         biografiaCorta: true,
                         estaVerificado: true,
-                        fechaSolicitud: true
+                        fechaSolicitud: true,
+                        estadoVerificacion: true,
+                        notasVerificacion: true,
+                        fotoDocumentoUrl: true
                     }
                 },
                 propiedades: {
@@ -168,5 +175,40 @@ export class AuthService {
         }
 
         return usuario;
+    }
+    /**
+     * Obtener todos los usuarios (para admin)
+     */
+    static async obtenerUsuarios() {
+        const usuarios = await prisma.usuario.findMany({
+            select: {
+                id: true,
+                nombresCompletos: true,
+                correo: true,
+                rolId: true,
+                fechaRegistro: true,
+                rol: {
+                    select: {
+                        nombre: true
+                    }
+                },
+                perfilVerificado: {
+                    select: {
+                        estaVerificado: true,
+                        estadoVerificacion: true
+                    }
+                },
+                propiedades: {
+                    select: {
+                        id: true
+                    }
+                }
+            },
+            orderBy: {
+                fechaRegistro: 'desc'
+            }
+        });
+
+        return usuarios;
     }
 }

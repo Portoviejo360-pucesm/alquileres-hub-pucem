@@ -117,7 +117,7 @@ export class AdminVerificacionService {
     /**
      * Aprobar verificación
      */
-    static async aprobarVerificacion(perfilId: number, adminId: string, notas?: string) {
+    static async aprobarVerificacion(perfilId: number, notas?: string) {
         const perfil = await prisma.perfilVerificado.findUnique({
             where: { id: perfilId }
         });
@@ -159,7 +159,7 @@ export class AdminVerificacionService {
     /**
      * Rechazar verificación
      */
-    static async rechazarVerificacion(perfilId: number, adminId: string, motivo: string) {
+    static async rechazarVerificacion(perfilId: number, motivo: string) {
         const perfil = await prisma.perfilVerificado.findUnique({
             where: { id: perfilId }
         });
@@ -195,7 +195,7 @@ export class AdminVerificacionService {
     }
 
     /**
-     * Obtener estadísticas de verificación
+     * Obtener estadísticas simples (Legacy support)
      */
     static async obtenerEstadisticas() {
         const [total, pendientes, verificados, rechazados] = await Promise.all([
@@ -205,12 +205,61 @@ export class AdminVerificacionService {
             prisma.perfilVerificado.count({ where: { estadoVerificacion: 'RECHAZADO' } })
         ]);
 
+        const totalUsuarios = await prisma.usuario.count();
+
         return {
             total,
             pendientes,
             verificados,
             rechazados,
-            noSolicitado: await prisma.usuario.count() - total
+            noSolicitado: totalUsuarios - total
+        };
+    }
+
+    /**
+     * Obtener estadísticas completas para Dashboard (New)
+     */
+    static async obtenerDashboardStats() {
+        const [
+            totalUsuarios,
+            totalArrendadores,
+            totalArrendadoresVerificados,
+            solicitudesPendientes,
+            totalPropiedades,
+            propiedadesDisponibles,
+            propiedadesOcupadas,
+            ingresosData
+        ] = await Promise.all([
+            // Usuarios
+            prisma.usuario.count(),
+            // Arrendadores (usuarios con algún perfil verificado creado)
+            prisma.perfilVerificado.count(),
+            // Arrendadores verificados
+            prisma.perfilVerificado.count({ where: { estaVerificado: true } }),
+            // Solicitudes pendientes
+            prisma.perfilVerificado.count({ where: { estadoVerificacion: 'PENDIENTE' } }),
+            // Propiedades totales
+            prisma.propiedad.count(),
+            // Propiedades disponibles
+            prisma.propiedad.count({ where: { estado: { nombre: 'disponible' } } }),
+            // Propiedades ocupadas
+            prisma.propiedad.count({ where: { estado: { nombre: 'ocupada' } } }),
+            // Ingresos estimados (suma de precios de propiedades ocupadas)
+            prisma.propiedad.aggregate({
+                where: { estado: { nombre: 'ocupada' } },
+                _sum: { precioMensual: true }
+            })
+        ]);
+
+        return {
+            totalUsuarios,
+            totalArrendadores,
+            totalArrendadoresVerificados,
+            solicitudesPendientes,
+            totalPropiedades,
+            propiedadesDisponibles,
+            propiedadesOcupadas,
+            ingresosMensualesEstimados: Number(ingresosData._sum.precioMensual || 0)
         };
     }
 }

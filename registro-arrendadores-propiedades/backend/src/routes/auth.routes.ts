@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller';
 import { authenticate } from '../middlewares/auth.middleware';
+import { requireAdmin } from '../middlewares/admin.middleware';
 import { validate } from '../middlewares/validation.middleware';
 import { registroSchema, loginSchema } from '../validators/auth.validator';
 
@@ -45,6 +46,18 @@ router.get(
     '/perfil',
     authenticate,
     AuthController.obtenerPerfil
+);
+
+/**
+ * @route   GET /api/v1/auth/usuarios
+ * @desc    Obtener todos los usuarios
+ * @access  Private (Solo Admin)
+ */
+router.get(
+    '/usuarios',
+    authenticate,
+    requireAdmin,
+    AuthController.obtenerUsuarios
 );
 
 export default router;

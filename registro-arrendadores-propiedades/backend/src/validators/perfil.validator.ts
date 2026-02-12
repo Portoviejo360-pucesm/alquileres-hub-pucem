@@ -12,18 +12,16 @@ export const solicitarVerificacionSchema = z.object({
             .regex(/^[0-9]+$/, 'La cédula/RUC solo puede contener números'),
 
         telefonoContacto: z.string()
-            .min(10, 'El teléfono debe tener al menos 10 caracteres')
-            .max(20, 'El teléfono no puede exceder 20 caracteres')
-            .regex(/^[0-9+\-\s()]+$/, 'Formato de teléfono inválido'),
+            .min(7, 'El teléfono debe tener al menos 7 caracteres')
+            .max(20, 'El teléfono no puede exceder 20 caracteres'),
 
         biografiaCorta: z.string()
-            .min(50, 'La biografía debe tener al menos 50 caracteres')
+            .min(10, 'La biografía debe tener al menos 10 caracteres')
             .max(500, 'La biografía no puede exceder 500 caracteres')
             .optional(),
 
         fotoDocumentoUrl: z.string()
-            .url('URL de documento inválida')
-            .optional()
+            .optional() // Hacemos opcional y quitamos validación estricta de URL por si viene vacía
     })
 });
 

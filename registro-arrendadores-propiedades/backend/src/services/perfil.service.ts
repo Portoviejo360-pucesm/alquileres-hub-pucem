@@ -42,7 +42,8 @@ export class PerfilService {
                     telefonoContacto: data.telefonoContacto,
                     biografiaCorta: data.biografiaCorta,
                     fotoDocumentoUrl: data.fotoDocumentoUrl,
-                    fechaSolicitud: new Date()
+                    fechaSolicitud: new Date(),
+                    estadoVerificacion: 'PENDIENTE'
                 }
             });
 
@@ -69,7 +70,8 @@ export class PerfilService {
                 telefonoContacto: data.telefonoContacto,
                 biografiaCorta: data.biografiaCorta,
                 fotoDocumentoUrl: data.fotoDocumentoUrl,
-                estaVerificado: false
+                estaVerificado: false,
+                estadoVerificacion: 'PENDIENTE'
             }
         });
 

@@ -54,4 +54,16 @@ export class AuthController {
             data: usuario
         });
     });
+    /**
+     * Obtener todos los usuarios
+     * GET /api/v1/auth/usuarios
+     */
+    static obtenerUsuarios = asyncHandler(async (req: Request, res: Response) => {
+        const usuarios = await AuthService.obtenerUsuarios();
+
+        res.status(200).json({
+            success: true,
+            data: usuarios
+        });
+    });
 }

@@ -78,10 +78,12 @@ export class AdminVerificacionController {
     /**
      * Aprobar verificación
      */
+    /**
+     * Aprobar verificación
+     */
     static async aprobarVerificacion(req: Request, res: Response, next: NextFunction) {
         try {
             const perfilId = parseInt(req.params.id);
-            const adminId = req.user!.id;
             const { notas } = req.body;
 
             if (isNaN(perfilId)) {
@@ -91,7 +93,7 @@ export class AdminVerificacionController {
                 });
             }
 
-            const perfil = await AdminVerificacionService.aprobarVerificacion(perfilId, adminId, notas);
+            const perfil = await AdminVerificacionService.aprobarVerificacion(perfilId, notas);
 
             res.status(200).json({
                 success: true,
@@ -106,10 +108,12 @@ export class AdminVerificacionController {
     /**
      * Rechazar verificación
      */
+    /**
+     * Rechazar verificación
+     */
     static async rechazarVerificacion(req: Request, res: Response, next: NextFunction) {
         try {
             const perfilId = parseInt(req.params.id);
-            const adminId = req.user!.id;
             const { motivo } = req.body;
 
             if (isNaN(perfilId)) {
@@ -119,12 +123,27 @@ export class AdminVerificacionController {
                 });
             }
 
-            const perfil = await AdminVerificacionService.rechazarVerificacion(perfilId, adminId, motivo);
+            const perfil = await AdminVerificacionService.rechazarVerificacion(perfilId, motivo);
 
             res.status(200).json({
                 success: true,
                 message: `Verificación rechazada para ${perfil.usuario.nombresCompletos}`,
                 data: perfil
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+    /**
+     * Obtener estadísticas de dashboard
+     */
+    static async obtenerDashboardStats(req: Request, res: Response, next: NextFunction) {
+        try {
+            const stats = await AdminVerificacionService.obtenerDashboardStats();
+
+            res.status(200).json({
+                success: true,
+                data: stats
             });
         } catch (error) {
             next(error);
