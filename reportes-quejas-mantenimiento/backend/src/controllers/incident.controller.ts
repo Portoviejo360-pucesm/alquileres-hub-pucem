@@ -166,28 +166,42 @@ export class IncidentController {
     static async getUserProperties(req: AuthRequest, res: Response, next: NextFunction) {
         try {
             const { user } = req;
+            let propiedades = [];
 
-            // Get properties with active reservations for this user
-            const reservas = await prisma.reserva.findMany({
-                where: {
-                    usuario_id: user!.id,
-                    estado: 'CONFIRMADA',
-                    // fecha_entrada: { lte: new Date() }, // Allow future reservations
-                    fecha_salida: { gte: new Date() },
-                },
-                include: {
-                    propiedad: {
-                        select: {
-                            id_propiedad: true,
-                            titulo_anuncio: true,
-                            direccion_texto: true,
-                            precio_mensual: true,
+            if (user?.role === 'landlord') {
+                // If landlord, get owned properties
+                propiedades = await prisma.propiedad.findMany({
+                    where: {
+                        propietario_id: user.id
+                    },
+                    select: {
+                        id_propiedad: true,
+                        titulo_anuncio: true,
+                        direccion_texto: true,
+                        precio_mensual: true,
+                    }
+                });
+            } else {
+                // If tenant (or other), get properties with active reservations
+                const reservas = await prisma.reserva.findMany({
+                    where: {
+                        usuario_id: user!.id,
+                        estado: 'CONFIRMADA',
+                        fecha_salida: { gte: new Date() },
+                    },
+                    include: {
+                        propiedad: {
+                            select: {
+                                id_propiedad: true,
+                                titulo_anuncio: true,
+                                direccion_texto: true,
+                                precio_mensual: true,
+                            }
                         }
                     }
-                }
-            });
-
-            const propiedades = reservas.map((r: any) => r.propiedad);
+                });
+                propiedades = reservas.map((r: any) => r.propiedad);
+            }
 
             res.json({
                 status: 'success',

@@ -33,10 +33,14 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         const decoded = jwt.verify(token, config.jwtSecret) as any;
 
         // Extract user information from token payload
-        // Adjust these fields based on your auth module's token structure
+        // Map rol_id to internal role strings for Access Control
+        let derivedRole: 'tenant' | 'landlord' | 'admin' = 'tenant';
+        if (decoded.rol_id === 1) derivedRole = 'admin';
+        if (decoded.rol_id === 2) derivedRole = 'landlord';
+
         req.user = {
             id: decoded.id || decoded.sub || decoded.userId,
-            role: decoded.role || decoded.user_role || 'tenant',
+            role: derivedRole,
             email: decoded.email,
             rol_id: decoded.rol_id,
         };

@@ -26,8 +26,8 @@ export class IncidentService {
         });
         if (!propiedad) throw new NotFoundError('Propiedad no encontrada. Verifica que el ID de propiedad sea válido.');
 
-        // 2. Validate tenant has active contract for this property (RF-001 RN2)
-        await this.validateTenantAccess(data.usuario_reportante_id, data.propiedad_id);
+        // 2. Validate tenant/owner rights (RF-001 RN2)
+        await this.validateReporterAccess(data.usuario_reportante_id, data.propiedad_id);
 
         // 3. Resolve catalogs
         const estado = await prisma.estado.findUnique({ where: { codigo: 'pendiente' } });
@@ -396,6 +396,9 @@ export class IncidentService {
                 estado: true,
                 prioridad: true,
                 categoria: true,
+                propiedad: {
+                    select: { titulo_anuncio: true }
+                },
             }
         });
 
@@ -443,9 +446,22 @@ export class IncidentService {
     }
 
     /**
-     * Validate tenant has active contract for property (RF-001 RN2)
+     * Validate user has rights to report incident on property
+     * - Owners: access because they own it
+     * - Tenants: access if active contract exists
      */
-    private static async validateTenantAccess(userId: string, propiedadId: number) {
+    private static async validateReporterAccess(userId: string, propiedadId: number) {
+        // 1. Check if user is the owner
+        const propiedad = await prisma.propiedad.findUnique({
+            where: { id_propiedad: propiedadId },
+            select: { propietario_id: true }
+        });
+
+        if (propiedad && propiedad.propietario_id === userId) {
+            return; // Owner has access
+        }
+
+        // 2. Check if user is a tenant with active reservation
         const activeReservation = await prisma.reserva.findFirst({
             where: {
                 usuario_id: userId,
@@ -457,7 +473,7 @@ export class IncidentService {
         });
 
         if (!activeReservation) {
-            throw new ForbiddenError('Solo puedes reportar incidencias en propiedades que actualmente ocupas');
+            throw new ForbiddenError('Solo puedes reportar incidencias en propiedades propias o que actualmente ocupas');
         }
     }
 

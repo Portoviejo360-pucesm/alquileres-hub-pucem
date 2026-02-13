@@ -1,51 +1,53 @@
 # Gestión de Inquilinos y Contratos
 
-Este módulo maneja la generación de contratos, gestión de inquilinos y lógica relacionada con las reservas.
+## 📋 Descripción
 
-## Requisitos Previos
+Este módulo administra el ciclo de vida de los **arriendos**. Maneja la información de los inquilinos, la generación y firma de contratos, y el seguimiento de los mismos.
 
-- Node.js (v18 o superior recomendado)
-- PostgreSQL
-- Configuración de variables de entorno
+## 🛠️ Tecnologías
 
-## Configuración
+- **Framework**: Express.js
+- **Lenguaje**: TypeScript
+- **Base de Datos**: PostgreSQL (vía Prisma ORM)
+- **Generación de Documentos**: `pdfkit` (para generar contratos en PDF).
+- **Autenticación**: `jsonwebtoken` (JWT).
 
-1.  **Variables de Entorno**:
-    Crea un archivo `.env` en la carpeta `backend` (`gestion-inquilinos-contratos/backend/.env`) con el siguiente contenido (ajusta según tu entorno):
+## 🚀 Instalación y Ejecución
 
-    ```env
-    PORT=3002
-    DATABASE_URL="postgresql://usuario:password@localhost:5432/tu_base_de_datos?schema=public"
-    ```
+### Pasos
 
-2.  **Instalación de Dependencias**:
-    Navega a la carpeta del backend y ejecuta:
-    ```bash
-    cd backend
-    npm install
-    ```
+1. **Instalar dependencias**:
 
-3.  **Base de Datos**:
-    Genera el cliente de Prisma y (opcionalmente) ejecuta las migraciones:
-    ```bash
-    npx prisma generate
-    # Si necesitas sincronizar la db
-    # npx prisma db push 
-    ```
+   ```bash
+   cd backend
+   npm install
+   ```
 
-## Ejecución
+2. **Base de Datos**:
+   Asegúrate de tener la conexión a la base de datos configurada en `.env`.
+   Genera el cliente de Prisma:
 
-Para iniciar el servidor en modo desarrollo:
+   ```bash
+   npm run prisma:generate
+   ```
 
-```bash
-cd backend
-npm run dev
-```
+3. **Ejecutar**:
 
-El servicio estará disponible en `http://localhost:3002`.
+   ```bash
+   npm run dev
+   ```
 
-## Funcionalidades Principales
+## 🔑 Funcionalidades
 
--   **Generación de Contratos**: Crea PDFs basados en plantillas Markdown.
--   **Gestión de Reservas**: Endpoints para crear y consultar reservas.
+- **Gestión de Inquilinos**: Registro y actualización de datos de arrendatarios.
+- **Creación de Contratos**: Generación dinámica de contratos en PDF.
+- **Historial de Arriendos**: Registro histórico de contratos finalizados y vigentes.
+- **Validación de Roles**: Asegura que solo usuarios autorizados gestionen contratos.
 
+## 🗄️ Modelo de Datos (Prisma)
+
+El esquema incluye modelos principales como:
+
+- `Tenant` (Inquilino)
+- `Contract` (Contrato)
+- `Property` (Referencia a Propiedad)

@@ -1,126 +1,74 @@
 # Backend Unificado - Alquileres Hub
 
-Backend orquestador que unifica todos los microservicios del sistema de gestión de alquileres en un solo servidor.
+## 📋 Descripción
 
-## 🏗️ Arquitectura Monorepo Modular
+Este módulo actúa como el **API Gateway y Orquestador** principal del sistema. Su función es unificar la entrada de peticiones, manejar la autenticación centralizada y redirigir el tráfico a los microservicios correspondientes.
 
-Este backend **NO reemplaza** los backends existentes, sino que los **orquesta** importando sus rutas:
+## 🛠️ Tecnologías
 
-```
-backend-unificado/
-├── src/
-│   └── app.ts          # Orquestador principal
-├── package.json
-└── .env
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Lenguaje**: TypeScript
+- **Base de Datos**: PostgreSQL (para gestión de sesiones/logs si aplica)
+- **Herramientas**:
+  - `morgan`: Logging de peticiones HTTP.
+  - `helmet`: Seguridad en cabeceras HTTP.
+  - `cors`: Manejo de Cross-Origin Resource Sharing.
+  - `dotenv`: Gestión de variables de entorno.
 
-↓ Importa rutas de:
+## 🚀 Instalación y Ejecución
 
-├── registro-arrendadores-propiedades/backend/
-├── gestion-inquilinos-contratos/backend/
-└── disponibilidad-busqueda-inteligente/BackendDisponibilidad/
-```
+### Prerrequisitos
 
-## 🚀 Inicio Rápido
+- Node.js (v18+)
+- PostgreSQL
 
-### 1. Instalar dependencias
+### Pasos
 
-```bash
-npm install
-```
+1. **Instalar dependencias**:
 
-### 2. Configurar variables de entorno
+   ```bash
+   npm install
+   ```
 
-Copia el archivo `.env.example` a `.env` y configura las variables:
+2. **Configurar variables de entorno**:
+   Crea un archivo `.env` basado en `.env.template`.
 
-```bash
-cp .env.example .env
-```
+   ```bash
+   cp .env.template .env
+   ```
 
-Edita `.env` con tus valores:
+   Asegúrate de definir el puerto y las URLs de los otros microservicios.
 
-```env
-PORT=8001
-DATABASE_URL=tu-url-de-supabase
-JWT_SECRET=tu-secret-key
-FRONTEND_URL=http://localhost:3000
-```
+3. **Compilar el proyecto**:
 
-### 3. Iniciar el servidor
+   ```bash
+   npm run build
+   ```
 
-```bash
-npm run dev
-```
+4. **Ejecutar en desarrollo**:
 
-El servidor estará disponible en `http://localhost:8001`
+   ```bash
+   npm run dev
+   ```
 
-## 📡 Endpoints Disponibles
+5. **Ejecutar en producción**:
 
-### Health Check
+   ```bash
+   npm start
+   ```
 
-- `GET /health` - Estado del servidor y módulos
+## 🔗 Rutas Principales
 
-### Módulo 1: Registro de Propiedades
+El backend unificado expone rutas que actúan como proxy hacia los otros servicios:
 
-- `POST /api/auth/login` - Login
-- `POST /api/auth/register` - Registro
-- `GET /api/perfil` - Perfil de usuario
-- `GET /api/propiedades/registro` - Listar propiedades
-- `POST /api/propiedades/registro` - Crear propiedad
-- `GET /api/catalogos` - Catálogos
+| Ruta Base | Servicio Destino | Descripción |
+|-----------|------------------|-------------|
+| `/api/auth` | Auth Service | Autenticación de usuarios |
+| `/api/users` | User Service | Gestión de perfiles |
+| `/api/properties` | Property Service | Gestión de propiedades |
+| `/api/contracts` | Contract Service | Contratos y arriendos |
 
-### Módulo 2: Inquilinos y Contratos
+## 🏗️ Arquitectura
 
-- `GET /api/reservas` - Listar reservas
-- `POST /api/reservas` - Crear reserva
-- `GET /api/contratos` - Listar contratos
-- `POST /api/contratos` - Crear contrato
-
-### Módulo 3: Disponibilidad
-
-- `GET /api/propiedades/disponibilidad` - Propiedades disponibles
-- `GET /api/filtros` - Filtros de búsqueda
-
-### Módulo 4: Reportes (Pendiente)
-
-- ⏳ Por implementar
-
-## 🔧 Scripts Disponibles
-
-- `npm run dev` - Inicia el servidor en modo desarrollo con hot-reload
-- `npm run build` - Compila TypeScript a JavaScript
-- `npm start` - Inicia el servidor en producción
-- `npm run type-check` - Verifica tipos de TypeScript
-
-## 📝 Notas Importantes
-
-1. **No elimines los backends originales** - Este orquestador los necesita para funcionar
-2. **Instala dependencias en cada backend** - Los módulos originales deben tener sus `node_modules`
-3. **Mismo JWT_SECRET** - Todos los backends deben usar el mismo secret
-4. **Mismo DATABASE_URL** - Todos comparten la misma base de datos Supabase
-
-## 🆘 Solución de Problemas
-
-### Error: Cannot find module '../../registro-arrendadores-propiedades/...'
-
-Asegúrate de que los backends originales existen y tienen sus dependencias instaladas:
-
-```bash
-cd ../registro-arrendadores-propiedades/backend && npm install
-cd ../gestion-inquilinos-contratos/backend && npm install
-cd ../disponibilidad-busqueda-inteligente/BackendDisponibilidad && npm install
-```
-
-### Error: Port 8001 already in use
-
-Detén el backend de registro que corre en 8001:
-
-```bash
-lsof -i :8001
-kill <PID>
-```
-
-O cambia el puerto en `.env`:
-
-```env
-PORT=8005
-```
+Este servicio implementa el patrón de **API Gateway**. No contiene lógica de negocio compleja de dominios específicos (como crear un contrato), sino que valida la petición (ej. tokens JWT) y la enruta al servicio adecuado.
