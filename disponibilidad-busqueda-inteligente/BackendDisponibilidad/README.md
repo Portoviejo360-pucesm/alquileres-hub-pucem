@@ -236,8 +236,8 @@ El backend **inicia automáticamente en el primer puerto disponible**, comenzand
 
 ## 📍 URLs locales
 
-* Backend: `http://localhost:<puerto>`
-* Frontend: `http://localhost:3001`
+* Backend: `http://localhost:8004`
+* Frontend: `http://localhost:3000`
 
 ---
 

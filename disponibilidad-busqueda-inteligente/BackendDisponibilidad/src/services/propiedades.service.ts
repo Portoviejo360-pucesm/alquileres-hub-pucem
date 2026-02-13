@@ -18,7 +18,16 @@ export const obtenerDisponibles = async () => {
       p.es_amoblado,
       p.fecha_creacion,
       e.nombre AS estado,
-      tp.nombre AS tipo_publico
+      tp.nombre AS tipo_publico,
+      (
+        SELECT json_agg(json_build_object(
+          'id', f.id_foto,
+          'urlImagen', f.url_imagen,
+          'esPrincipal', f.es_principal
+        ) ORDER BY f.es_principal DESC NULLS LAST)
+        FROM fotos_propiedad f
+        WHERE f.propiedad_id = p.id_propiedad
+      ) AS fotos
     FROM propiedades p
     JOIN estados_propiedad e ON p.estado_id = e.id_estado
     JOIN tipo_publico tp ON p.publico_objetivo_id = tp.id_tipo
@@ -46,7 +55,37 @@ export const obtenerPropiedadPorId = async (id: number) => {
       p.es_amoblado,
       p.fecha_creacion,
       e.nombre AS estado,
-      tp.nombre AS tipo_publico
+      tp.nombre AS tipo_publico,
+      (
+        SELECT json_agg(json_build_object(
+          'id', f.id_foto,
+          'urlImagen', f.url_imagen,
+          'esPrincipal', f.es_principal
+        ) ORDER BY f.es_principal DESC NULLS LAST)
+        FROM fotos_propiedad f
+        WHERE f.propiedad_id = p.id_propiedad
+      ) AS fotos,
+      (
+        SELECT json_agg(json_build_object(
+          'id', cs.id_servicio,
+          'nombre', cs.nombre,
+          'incluidoEnPrecio', ps.incluido_en_precio
+        ))
+        FROM propiedad_servicios ps
+        JOIN catalogo_servicios cs ON cs.id_servicio = ps.servicio_id
+        WHERE ps.propiedad_id = p.id_propiedad
+      ) AS servicios,
+      (
+        SELECT json_build_object(
+          'id', u.id_usuario,
+          'nombresCompletos', u.nombres_completos,
+          'correo', u.correo,
+          'telefonoContacto', pv.telefono_contacto
+        )
+        FROM usuarios u
+        LEFT JOIN perfil_verificado pv ON pv.usuario_id = u.id_usuario
+        WHERE u.id_usuario = p.propietario_id
+      ) AS propietario
     FROM propiedades p
     JOIN estados_propiedad e ON p.estado_id = e.id_estado
     JOIN tipo_publico tp ON p.publico_objetivo_id = tp.id_tipo
