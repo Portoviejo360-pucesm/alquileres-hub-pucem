@@ -38,9 +38,21 @@ export const filtrarPropiedades = async (filtros: FiltrarPropiedadesDTO) => {
     where += ` AND p.precio_mensual <= $${values.length}`;
   }
 
-  // 5️⃣ QUERY FINAL (arrastra correctamente)
+  // 5️⃣ Filtro por servicios (IDs)
+  if (filtros.servicios && filtros.servicios.length > 0) {
+    const placeholders = filtros.servicios.map((_, i) => `$${values.length + i + 1}`).join(', ');
+    values.push(...filtros.servicios);
+    where += ` AND p.id_propiedad IN (
+      SELECT ps.propiedad_id FROM propiedad_servicios ps
+      WHERE ps.servicio_id IN (${placeholders})
+      GROUP BY ps.propiedad_id
+      HAVING COUNT(DISTINCT ps.servicio_id) = ${filtros.servicios.length}
+    )`;
+  }
+
+  // 6️⃣ QUERY FINAL
   const query = `
-    SELECT 
+    SELECT
       p.id_propiedad,
       p.titulo_anuncio,
       p.descripcion,
@@ -51,7 +63,26 @@ export const filtrarPropiedades = async (filtros: FiltrarPropiedadesDTO) => {
       p.es_amoblado,
       p.fecha_creacion,
       e.nombre AS estado,
-      tp.nombre AS publico_objetivo
+      tp.nombre AS publico_objetivo,
+      (
+        SELECT json_agg(json_build_object(
+          'id', f.id_foto,
+          'urlImagen', f.url_imagen,
+          'esPrincipal', f.es_principal
+        ) ORDER BY f.es_principal DESC NULLS LAST)
+        FROM fotos_propiedad f
+        WHERE f.propiedad_id = p.id_propiedad
+      ) AS fotos,
+      (
+        SELECT json_agg(json_build_object(
+          'id', cs.id_servicio,
+          'nombre', cs.nombre,
+          'incluidoEnPrecio', ps2.incluido_en_precio
+        ))
+        FROM propiedad_servicios ps2
+        JOIN catalogo_servicios cs ON cs.id_servicio = ps2.servicio_id
+        WHERE ps2.propiedad_id = p.id_propiedad
+      ) AS servicios
     FROM propiedades p
     JOIN estados_propiedad e ON p.estado_id = e.id_estado
     JOIN tipo_publico tp ON p.publico_objetivo_id = tp.id_tipo

@@ -27,7 +27,17 @@ export const obtenerDisponibles = async () => {
         ) ORDER BY f.es_principal DESC NULLS LAST)
         FROM fotos_propiedad f
         WHERE f.propiedad_id = p.id_propiedad
-      ) AS fotos
+      ) AS fotos,
+      (
+        SELECT json_agg(json_build_object(
+          'id', cs.id_servicio,
+          'nombre', cs.nombre,
+          'incluidoEnPrecio', ps.incluido_en_precio
+        ))
+        FROM propiedad_servicios ps
+        JOIN catalogo_servicios cs ON cs.id_servicio = ps.servicio_id
+        WHERE ps.propiedad_id = p.id_propiedad
+      ) AS servicios
     FROM propiedades p
     JOIN estados_propiedad e ON p.estado_id = e.id_estado
     JOIN tipo_publico tp ON p.publico_objetivo_id = tp.id_tipo

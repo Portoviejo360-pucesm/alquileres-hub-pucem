@@ -1,46 +1,135 @@
-# Alquileres Hub - Backend System
+# Alquileres Hub PUCEM — Backend
 
-## 🌟 Visión General
+Sistema de gestion de arriendos para Portoviejo. Monorepo con 4 modulos backend orquestados por un servidor unificado.
 
-Este directorio contiene toda la lógica del lado del servidor para el ecosistema **PortoViejo360**. El sistema está diseñado con una arquitectura orientada a servicios (o modular), donde cada funcionalidad principal reside en su propio directorio/módulo.
+[![Docker](https://img.shields.io/badge/Docker-sketox%2Fportoviejo360--backend-blue?logo=docker)](https://hub.docker.com/r/sketox/portoviejo360-backend)
 
-## 🏗️ Arquitectura Modular
+---
 
-El backend se divide en los siguientes componentes clave:
+## Arquitectura
 
-### 1. [Backend Unificado (API Gateway)](./backend-unificado/README.md)
+```
+alquileres-hub-pucem/
+├── backend-unificado/                      # Servidor principal (port 8001)
+│   └── src/app.ts                          # Orquesta los 4 modulos
+├── registro-arrendadores-propiedades/
+│   └── backend/                            # Auth, propiedades, verificacion (Prisma)
+├── gestion-inquilinos-contratos/
+│   └── backend/                            # Reservas, contratos PDF (Prisma)
+├── disponibilidad-busqueda-inteligente/
+│   └── BackendDisponibilidad/              # Listado publico, filtros, Socket.io (pg raw)
+└── reportes-quejas-mantenimiento/
+    └── backend/                            # Incidencias, bitacora (Prisma)
+```
 
-Es el punto de entrada principal. Orquesta las peticiones, maneja la autenticación y enruta el tráfico a los servicios correspondientes.
+En desarrollo, **solo se ejecuta el `backend-unificado`** que importa las rutas de los 4 modulos directamente como TypeScript.
 
-### 2. [Disponibilidad y Búsqueda](./disponibilidad-busqueda-inteligente/README.md)
+---
 
-Motor de búsqueda de propiedades y gestión de fechas disponibles.
+## Modulos
 
-### 3. [Gestión de Inquilinos y Contratos](./gestion-inquilinos-contratos/README.md)
+| # | Modulo | Rutas montadas | ORM |
+|---|--------|---------------|-----|
+| 1 | Registro de Arrendadores | `/api/v1/auth`, `/api/v1/propiedades/registro`, `/api/v1/verificacion` | Prisma |
+| 2 | Gestion de Inquilinos | `/api/v1/reservas`, `/api/v1/contratos` | Prisma |
+| 3 | Disponibilidad y Busqueda | `/api/v1/propiedades`, `/api/v1/filtros` | pg Pool (SQL raw) |
+| 4 | Reportes y Mantenimiento | `/api/v1/incidents`, `/api/v1/catalogos-mantenimiento` | Prisma |
 
-Administración de arrendatarios, generación de contratos PDF y ciclo de vida del alquiler.
+---
 
-### 4. [Registro de Arrendadores y Propiedades](./registro-arrendadores-propiedades/README.md)
+## Inicio Rapido — Desarrollo Local
 
-Onboarding de propietarios y alta de inventario (casas, deptos, locales).
+### Requisitos
+- Node.js >= 18
+- npm
+- Cuenta en Supabase (base de datos compartida)
 
-### 5. [Reportes y Mantenimiento](./reportes-quejas-mantenimiento/README.md)
+### Pasos
 
-Sistema de tickets para soporte, quejas y solicitudes de reparación.
+```bash
+# 1. Instalar dependencias del backend unificado
+cd backend-unificado
+npm install
 
-## 🚀 Cómo Empezar
+# 2. Configurar variables de entorno
+cp .env.example .env
+# Edita .env con tus credenciales de Supabase y JWT_SECRET
 
-Cada módulo es independiente en cuanto a dependencias. Sin embargo, el flujo general de desarrollo suele ser:
+# 3. Instalar dependencias de cada modulo
+cd ../registro-arrendadores-propiedades/backend && npm install
+cd ../../gestion-inquilinos-contratos/backend && npm install
+cd ../../disponibilidad-busqueda-inteligente/BackendDisponibilidad && npm install
+cd ../../reportes-quejas-mantenimiento/backend && npm install
 
-1. **Configurar Bases de Datos**: Asegúrate de tener PostgreSQL/Supabase listos.
-2. **Backend Unificado**: Levanta este servicio primero (`backend-unificado`) para tener el gateway activo.
-3. **Microservicios**: Levanta los servicios individuales según la funcionalidad que estés desarrollando.
+# 4. Arrancar el servidor unificado
+cd ../../backend-unificado
+npm run dev
+```
 
-Consulta el `README.md` de cada subdirectorio para instrucciones específicas de instalación.
+El servidor estara disponible en `http://localhost:8001`.
 
-## 🛠️ Tecnologías Comunes
+---
 
-- **Lenguaje**: TypeScript
-- **Runtime**: Node.js
-- **BD**: PostgreSQL / Supabase
-- **ORM**: Prisma Estándar
+## Variables de Entorno
+
+Ver `backend-unificado/.env.example`:
+
+```env
+PORT=8001
+DATABASE_URL=postgresql://postgres.[ref]:[pass]@...supabase.com:6543/postgres
+JWT_SECRET=tu-secreto-muy-largo-aqui
+FRONTEND_URL=http://localhost:3000
+CORS_ORIGIN=http://localhost:3000
+SUPABASE_URL=https://[ref].supabase.co
+SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+```
+
+---
+
+## API Reference
+
+Base URL: `http://localhost:8001/api/v1`
+
+| Endpoint | Descripcion |
+|----------|-------------|
+| `GET /health` | Health check del servidor |
+| `POST /auth/login` | Login de usuario |
+| `POST /auth/register` | Registro de usuario |
+| `GET /propiedades` | Listado publico de propiedades |
+| `GET /filtros/propiedades` | Filtrado de propiedades |
+| `GET /reservas` | Mis reservas |
+| `GET /incidents` | Incidencias |
+
+---
+
+## Docker
+
+### Correr con Docker Compose (proyecto completo)
+
+```bash
+# Desde la raiz del proyecto (portoviejo360/)
+cp .env.docker.example .env
+# Edita .env con tus credenciales reales
+docker compose up --build
+```
+
+### Imagen en DockerHub
+
+```bash
+# Descargar imagen del backend
+docker pull sketox/portoviejo360-backend:latest
+```
+
+Ver [`DOCKER_README.md`](../DOCKER_README.md) para instrucciones completas.
+
+---
+
+## Tecnologias
+
+- **Express 5** + TypeScript
+- **Supabase PostgreSQL** (pgbouncer port 6543)
+- **Prisma** (modulos 1, 2, 4) + **pg Pool raw SQL** (modulo 3)
+- **JWT** (auth compartida entre modulos)
+- **Socket.io** (tiempo real en modulo de disponibilidad)
+- **Supabase Storage** (fotos, documentos, adjuntos)

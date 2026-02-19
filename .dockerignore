@@ -1,0 +1,26 @@
+# Ignorar node_modules de todos los modulos (se instalan en el build)
+**/node_modules
+**/.git
+**/.gitignore
+**/dist
+**/*.log
+
+# Archivos de entorno con secretos
+**/.env
+**/.env.local
+**/*.env
+
+# Archivos de desarrollo
+**/.vscode
+**/.claude
+**/CLAUDE.md
+**/README.md
+**/DOCUMENTACION.md
+
+# Prisma cache
+**/.prisma
+**/prisma/*.db
+
+# Uploads locales
+**/public/uploads
+**/uploads

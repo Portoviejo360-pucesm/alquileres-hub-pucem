@@ -1,267 +1,109 @@
+# Backend — Disponibilidad y Busqueda Inteligente
+
+Modulo 3 del sistema **Portoviejo360**. Provee la API REST publica y actualizaciones en tiempo real via Socket.io para el panel de busqueda de propiedades.
+
+> Este modulo corre integrado dentro del **backend-unificado** (port 8001). Solo levantalo de forma standalone para desarrollo aislado (port 8004).
 
 ---
 
-# 🏠 Panel de Disponibilidad y Búsqueda Inteligente
+## Stack
 
-### Microservicio — **Portoviejo 360**
-
-Este microservicio forma parte del ecosistema **Portoviejo 360** y es responsable de la **gestión, consulta y filtrado de propiedades inmobiliarias**, así como de la **sincronización en tiempo real del estado de las propiedades** mediante **WebSockets**.
-
-Se conecta directamente a la **base de datos central del proyecto (Supabase – PostgreSQL)** y **no implementa autenticación**, ya que consume información compartida del sistema principal.
-
----
-
-## 🎯 Objetivo del Microservicio
-
-* Gestionar propiedades inmobiliarias.
-* Proveer consultas eficientes y filtros inteligentes.
-* Mantener sincronizado el estado de las propiedades en tiempo real.
-* Reducir recargas del frontend mediante eventos WebSocket.
+| Tecnologia | Version |
+|-----------|---------|
+| Node.js | >= 16 |
+| Express | ^5.2.1 |
+| TypeScript | ^5.x |
+| **pg (node-postgres)** | ^8.16 — SQL raw, sin Prisma |
+| Socket.io | ^4.8.1 |
+| ts-node-dev | ^2.x |
 
 ---
 
-## 📌 Responsabilidades Principales
+## Endpoints REST
 
-* CRUD parcial de propiedades.
-* Consulta de propiedades disponibles.
-* Filtrado dinámico por:
+### `/propiedades`
 
-  * Estado de la propiedad.
-  * Público objetivo.
-  * Rango de precios.
-* Emisión de eventos WebSocket cuando cambia el estado de una propiedad.
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | `/propiedades` | Lista todas con fotos y servicios embebidos |
+| GET | `/propiedades/:id` | Detalle + datos del propietario |
+| POST | `/propiedades` | Crear propiedad |
+| PUT | `/propiedades/:id` | Editar campos (parcial) |
+| PUT | `/propiedades/:id/estado` | Cambiar estado → dispara evento WS |
+| GET | `/propiedades/:id/propietario` | Datos del propietario |
+| GET | `/propiedades/:id/fotos` | Fotos |
+| GET | `/propiedades/:id/servicios` | Servicios → dispara evento WS |
 
----
+### `/filtros`
 
-## 🧱 Arquitectura General
+| Metodo | Ruta | Query params |
+|--------|------|-------------|
+| GET | `/filtros/propiedades` | `estado`, `publico_objetivo_id`, `precio_min`, `precio_max`, `servicios` |
 
-Arquitectura por capas con comunicación en tiempo real:
-
+**Ejemplo:**
 ```
-Frontend (Next.js)
-│
-│  WebSocket (Socket.IO)
-▼
-API Gateway
-│
-│  Eventos de estado
-▼
-Microservicio de Disponibilidad
-│
-▼
-Base de Datos (Supabase - PostgreSQL)
+GET /filtros/propiedades?estado=disponible&precio_min=200&precio_max=600
+GET /filtros/propiedades?servicios=1,3,5
 ```
 
-### Principios aplicados
+---
 
-* Separación de responsabilidades
-* Bajo acoplamiento
-* Comunicación reactiva
-* Escalabilidad modular
+## Eventos Socket.io
+
+| Evento emitido | Cuando |
+|----------------|--------|
+| `propiedad:estado-cambiado` | `PUT /propiedades/:id/estado` |
+| `propiedad:servicios` | `GET /propiedades/:id/servicios` |
 
 ---
 
-## 📁 Estructura del Proyecto
+## Estructura
 
 ```
 src/
-├── config/                # Conexión a base de datos
-├── controllers/           # Controladores HTTP
-├── services/              # Lógica de negocio
-├── routers/               # Definición de rutas
-├── modules/
-│   ├── propiedades/       # Dominio propiedades
-│   ├── filtros/           # Filtros inteligentes
-│   └── tiempo-real/       # WebSockets
-├── middleware/            # Validaciones
-├── utils/                 # Helpers y respuestas
-├── app.ts                 # Configuración Express
-└── server.ts              # Arranque dinámico del servidor
+├── server.ts                   # Entry point standalone (port 8004)
+├── app.ts                      # Express app (importada por backend-unificado)
+├── config/database.ts          # pg.Pool → Supabase con SSL
+├── routers/
+│   ├── propiedades.routes.ts
+│   └── filtros.routes.ts
+├── controllers/                # Handlers HTTP
+├── services/
+│   ├── propiedades.service.ts  # SQL raw con JSON_AGG
+│   └── filtros.service.ts      # WHERE dinamico con $placeholders
+└── modules/tiempo-real/
+    └── panel.gateway.ts        # Socket.io emitters
 ```
 
 ---
 
-## 🗄️ Base de Datos (Supabase – PostgreSQL)
+## Variables de Entorno
 
-### Tablas utilizadas
-
-* `propiedades`
-* `estados_propiedad`
-* `tipo_publico`
-* `usuarios` (solo referencia por `propietario_id`)
-
-### Relaciones clave
-
-* `propiedades.estado_id → estados_propiedad.id_estado`
-* `propiedades.publico_objetivo_id → tipo_publico.id_tipo`
-* `propiedades.propietario_id → usuarios.id_usuario`
-
----
-
-## 🌐 Endpoints REST
-
-### 1️⃣ Listar propiedades
-
-```http
-GET /propiedades
-```
-
-**Descripción**
-Devuelve todas las propiedades con su estado y público objetivo.
-
----
-
-### 2️⃣ Crear propiedad
-
-```http
-POST /propiedades
-```
-
-```json
-{
-  "propietario_id": "uuid-usuario",
-  "estado_id": 1,
-  "publico_objetivo_id": 1,
-  "titulo_anuncio": "Suite Norte",
-  "descripcion": "Cómoda suite amoblada",
-  "precio_mensual": 400,
-  "direccion_texto": "Av. Manabí",
-  "latitud_mapa": -0.9536,
-  "longitud_mapa": -80.7371,
-  "es_amoblado": true
-}
-```
-
----
-
-### 3️⃣ Cambiar estado de una propiedad (TIEMPO REAL)
-
-```http
-PUT /propiedades/:id/estado
-```
-
-```json
-{
-  "estado_id": 2
-}
-```
-
-📡 **Este endpoint emite un evento WebSocket** a todos los clientes conectados.
-
----
-
-### 4️⃣ Editar una propiedad completa
-
-```http
-PUT /propiedades/:id
-```
-
-Actualiza únicamente los campos enviados (edición parcial tipo Amazon).
-
----
-
-### 5️⃣ Obtener datos relacionados por ID
-
-```http
-GET /propiedades/:id/servicios
-GET /propiedades/:id/fotos
-GET /propiedades/:id/propietario
-GET /propiedades/:id/perfil-verificado
-```
-
----
-
-## 🔍 Filtros Inteligentes
-
-```http
-GET /filtros/propiedades?estado=DISPONIBLE
-GET /filtros/propiedades?precio_min=300&precio_max=500
-GET /filtros/propiedades?estado=DISPONIBLE&publico_objetivo_id=2
-```
-
-### Comportamiento
-
-* Los filtros se traducen a SQL dinámico.
-* Si no hay coincidencias → devuelve `[]`.
-* No genera errores innecesarios.
-
----
-
-## 🔴 Comunicación en Tiempo Real (WebSocket)
-
-### Evento emitido
-
-```json
-{
-  "id_propiedad": 26,
-  "estado_id": 2,
-  "estado": "OCUPADO",
-  "precio_mensual": "400.00",
-  "publico_objetivo": "SOLO ESTUDIANTES",
-  "timestamp": "2025-12-21T04:28:38.983Z"
-}
-```
-
-### Comportamiento en frontend
-
-* Escucha el evento.
-* Actualiza el estado global.
-* Refresca UI y mapa sin recargar la página.
-
----
-
-## 🧪 Pruebas Realizadas
-
-* Endpoints REST probados con **Postman**.
-* WebSocket validado mediante logs.
-* Confirmación de actualización visual en frontend.
-* Verificación de filtros combinados.
-
----
-
-## 🚀 Ejecución Local
-
-### Variables de entorno
+Crea `.env` en esta carpeta (ver `.env.template`):
 
 ```env
-PORT=3000
-DATABASE_URL=postgresql://usuario:password@host:puerto/database
+DATABASE_URL=postgresql://postgres.[ref]:[pass]@...supabase.com:6543/postgres
+PORT=8004
 ```
 
-### Arranque dinámico de puerto
+---
 
-El backend **inicia automáticamente en el primer puerto disponible**, comenzando desde el definido en `PORT`.
+## Ejecucion Local (Standalone)
+
+```bash
+npm install
+npm run dev    # ts-node-dev, port 8004
+```
 
 ---
 
-## 📍 URLs locales
+## Ejecucion con Docker (Proyecto Completo)
 
-* Backend: `http://localhost:8004`
-* Frontend: `http://localhost:3000`
+```bash
+# Desde la raiz del proyecto portoviejo360/
+docker compose up --build
+```
 
----
-
-## ✅ Estado Actual
-
-✔ Backend funcional
-✔ Conectado a Supabase
-✔ Endpoints REST completos
-✔ WebSocket operativo
-✔ Frontend sincronizado en tiempo real
-✔ Arquitectura limpia y escalable
-
----
-
-## 🧭 Próximos Pasos
-
-* Filtros por cercanía geográfica.
-* Autenticación y roles.
-* Persistencia de favoritos.
-* Optimización de consultas espaciales.
-
----
-
-## 👨‍💻 Autor
-
-Proyecto académico — **Portoviejo 360**
-Microservicio: **Panel de Disponibilidad y Búsqueda Inteligente**
+Las imagenes estan publicadas en DockerHub:
+- `sketox/portoviejo360-backend:latest`
+- `sketox/portoviejo360-frontend:latest`
